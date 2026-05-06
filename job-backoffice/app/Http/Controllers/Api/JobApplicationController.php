@@ -102,4 +102,53 @@ class JobApplicationController extends BaseApiController
 
         return $this->success('Application rejected successfully.', $application->fresh(['user', 'resume', 'jobvacancy.company']));
     }
+
+    public function uploadCV(Request $request, string $id): JsonResponse
+    {
+        $application = JobApplication::find($id);
+
+        if (! $application) {
+            return $this->notFound('Application not found.');
+        }
+
+        $validator = Validator::make($request->all(), [
+            'cv_file' => ['required', 'file', 'mimes:pdf,doc,docx', 'max:5120'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error('Validation failed.', $validator->errors(), 422);
+        }
+
+        // Handle file upload
+        $file = $request->file('cv_file');
+        $filename = $application->userId . '-' . now()->timestamp . '.' . $file->getClientOriginalExtension();
+        $path = $file->storeAs('public/resumes', $filename);
+        $fileUrl = '/storage/resumes/' . $filename;
+
+        // Update or create resume
+        $resume = Resume::where('userId', $application->userId)->first();
+
+        if ($resume) {
+            $resume->update([
+                'filename' => $file->getClientOriginalName(),
+                'fileUrl' => $fileUrl,
+            ]);
+        } else {
+            $resume = Resume::create([
+                'userId' => $application->userId,
+                'filename' => $file->getClientOriginalName(),
+                'fileUrl' => $fileUrl,
+                'contactDetails' => 'N/A',
+                'education' => 'N/A',
+                'experience' => 'N/A',
+                'skills' => 'N/A',
+                'summary' => 'Uploaded resume file.',
+            ]);
+        }
+
+        // Update application with resume
+        $application->update(['resumeId' => $resume->id]);
+
+        return $this->success('CV uploaded successfully.', $application->fresh(['user', 'resume', 'jobvacancy.company']), 200);
+    }
 }

@@ -21,11 +21,11 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/auth/register"
+              "raw": "{{base_api_url}}/auth/register"
             },
             "body": {
               "mode": "raw",
-              "raw": "{\"name\": \"{{seeker_name}}\", \"email\": \"{{seeker_email}}\", \"password\": \"{{seeker_password}}\", \"role\": \"job_seeker\"}"
+              "raw": "{\n  \"name\": \"John Job Seeker\",\n  \"email\": \"seeker{{$timestamp}}@example.com\",\n  \"password\": \"Password@123\",\n  \"role\": \"job_seeker\"\n}"
             }
           },
           "event": [
@@ -54,11 +54,11 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/auth/login"
+              "raw": "{{base_api_url}}/auth/login"
             },
             "body": {
               "mode": "raw",
-              "raw": "{\"email\": \"{{seeker_email}}\", \"password\": \"{{seeker_password}}\"}"
+              "raw": "{\n  \"email\": \"{{seeker_email}}\",\n  \"password\": \"{{seeker_password}}\"\n}"
             }
           },
           "event": [
@@ -87,7 +87,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/me"
+              "raw": "{{base_api_url}}/me"
             }
           },
           "event": [
@@ -96,6 +96,161 @@
               "script": {
                 "exec": [
                   "pm.test('Current user', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Job Seeker",
+      "description": "Job seeker vacancy discovery and application flow.",
+      "item": [
+        {
+          "name": "Get All Vacancies",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{seeker_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_api_url}}/vacancies"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Get all vacancies', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filter Vacancies By Company",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{seeker_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_api_url}}/vacancies?company_id={{company_id}}",
+              "query": [
+                {
+                  "key": "company_id",
+                  "value": "{{company_id}}",
+                  "disabled": false
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Filter vacancies by company', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Apply To Vacancy",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{seeker_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "jobVacancyId",
+                  "value": "{{vacancy_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "job_vacancy_id",
+                  "value": "{{vacancy_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "userId",
+                  "value": "{{seeker_user_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "user_id",
+                  "value": "{{seeker_user_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "cv",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_api_url}}/applications"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Apply to vacancy', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.id) { pm.environment.set('application_id', json.data.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload CV To Existing Application",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{seeker_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "cv",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_api_url}}/applications/{{application_id}}/upload-cv"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Upload CV to existing application', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
                 ]
               }
             }
@@ -118,11 +273,11 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/auth/login"
+              "raw": "{{base_api_url}}/auth/login"
             },
             "body": {
               "mode": "raw",
-              "raw": "{\"email\": \"{{admin_email}}\", \"password\": \"{{admin_password}}\"}"
+              "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}"
             }
           },
           "event": [
@@ -156,11 +311,11 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/companies"
+              "raw": "{{base_api_url}}/companies"
             },
             "body": {
               "mode": "raw",
-              "raw": "{\"name\": \"{{company_name}}\", \"domain\": \"acme.local\"}"
+              "raw": "{\n  \"name\": \"Acme Corporation\",\n  \"address\": \"123 Business Street, City\",\n  \"industry\": \"Technology\",\n  \"website\": \"https://acme.example.com\",\n  \"owner_id\": \"{{admin_user_id}}\"\n}"
             }
           },
           "event": [
@@ -187,11 +342,11 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/auth/register"
+              "raw": "{{base_api_url}}/auth/register"
             },
             "body": {
               "mode": "raw",
-              "raw": "{\"name\": \"{{owner_name}}\", \"email\": \"{{owner_email}}\", \"password\": \"{{owner_password}}\", \"role\": \"company_owner\"}"
+              "raw": "{\n  \"name\": \"Acme Corporation\",\n  \"address\": \"123 Business Street, City\",\n  \"industry\": \"Technology\",\n  \"website\": \"https://acme.example.com\",\n  \"owner_id\": \"{{admin_user_id}}\"\n}"
             }
           },
           "event": [
@@ -230,11 +385,11 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/departments"
+              "raw": "{{base_api_url}}/departments"
             },
             "body": {
               "mode": "raw",
-              "raw": "{\"company_id\": \"{{company_id}}\", \"name\": \"{{department_name}}\", \"code\": \"{{department_code}}\"}"
+              "raw": "{\n  \"company_id\": \"{{company_id}}\",\n  \"name\": \"Engineering\",\n  \"code\": \"ENG-001\"\n}"
             }
           },
           "event": [
@@ -265,7 +420,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/employees"
+              "raw": "{{base_api_url}}/employees"
             },
             "body": {
               "mode": "raw",
@@ -300,7 +455,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/employees"
+              "raw": "{{base_api_url}}/employees"
             },
             "body": {
               "mode": "raw",
@@ -335,7 +490,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/employees"
+              "raw": "{{base_api_url}}/employees"
             },
             "body": {
               "mode": "raw",
@@ -366,7 +521,19 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/employees?company_id={{company_id}}&department_id={{department_id}}"
+              "raw": "{{base_api_url}}/employees?company_id={{company_id}}&department_id={{department_id}}",
+              "query": [
+                {
+                  "key": "company_id",
+                  "value": "{{company_id}}",
+                  "disabled": false
+                },
+                {
+                  "key": "department_id",
+                  "value": "{{department_id}}",
+                  "disabled": false
+                }
+              ]
             }
           },
           "event": [
@@ -391,7 +558,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/employees/{{employee_id}}"
+              "raw": "{{base_api_url}}/employees/{{employee_id}}"
             }
           },
           "event": [
@@ -420,11 +587,11 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/employees/{{employee_id}}"
+              "raw": "{{base_api_url}}/employees/{{employee_id}}"
             },
             "body": {
               "mode": "raw",
-              "raw": "{\"job_title\": \"Senior Backend Developer\"}"
+              "raw": "{\n  \"job_title\": \"Senior Software Engineer\",\n  \"status\": \"active\"\n}"
             }
           },
           "event": [
@@ -453,7 +620,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/employees/{{employee_id}}/transfer-department"
+              "raw": "{{base_api_url}}/employees/{{employee_id}}/transfer-department"
             },
             "body": {
               "mode": "raw",
@@ -486,11 +653,11 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/employees/{{employee_id}}/assign-manager"
+              "raw": "{{base_api_url}}/employees/{{employee_id}}/assign-manager"
             },
             "body": {
               "mode": "raw",
-              "raw": "{\"manager_id\": \"{{manager_employee_id}}\"}"
+              "raw": "{\n  \"manager_employee_id\": \"{{manager_employee_id}}\"\n}"
             }
           },
           "event": [
@@ -515,7 +682,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/employees/{{employee_id}}/terminate"
+              "raw": "{{base_api_url}}/employees/{{employee_id}}/terminate"
             }
           },
           "event": [
@@ -546,7 +713,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/auth/login"
+              "raw": "{{base_api_url}}/auth/login"
             },
             "body": {
               "mode": "raw",
@@ -580,7 +747,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/me"
+              "raw": "{{base_api_url}}/me"
             }
           },
           "event": [
@@ -609,7 +776,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/leave/apply"
+              "raw": "{{base_api_url}}/leave/apply"
             },
             "body": {
               "mode": "raw",
@@ -624,6 +791,98 @@
                   "var json = {}; try { json = pm.response.json(); } catch (e) {}",
                   "pm.test('Request leave', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
                   "if (json.data && json.data.id) { pm.environment.set('leave_id', json.data.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Check In",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_api_url}}/employees/{{employee_id}}/check-in"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Check-in successful', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Check Out",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_api_url}}/employees/{{employee_id}}/check-out"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Check-out successful', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Attendance Records",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_api_url}}/attendance?employee_id={{employee_id}}&from_date=2024-05-01&to_date=2024-05-31",
+              "query": [
+                {
+                  "key": "employee_id",
+                  "value": "{{employee_id}}",
+                  "disabled": false
+                },
+                {
+                  "key": "from_date",
+                  "value": "2024-05-01",
+                  "disabled": false
+                },
+                {
+                  "key": "to_date",
+                  "value": "2024-05-31",
+                  "disabled": false
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Get attendance records', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
                 ]
               }
             }
@@ -646,7 +905,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/leaves?employee_id={{employee_id}}"
+              "raw": "{{base_api_url}}/leaves?employee_id={{employee_id}}"
             }
           },
           "event": [
@@ -675,11 +934,11 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/leave/approve"
+              "raw": "{{base_api_url}}/leave/approve"
             },
             "body": {
               "mode": "raw",
-              "raw": "{\"leave_id\": \"{{leave_id}}\"}"
+              "raw": "{\n  \"leave_id\": \"{{leave_id}}\"\n}"
             }
           },
           "event": [
@@ -708,11 +967,11 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/leave/reject"
+              "raw": "{{base_api_url}}/leave/reject"
             },
             "body": {
               "mode": "raw",
-              "raw": "{\"leave_id\": \"{{leave_id}}\"}"
+              "raw": "{\n  \"leave_id\": \"{{leave_id}}\"\n}"
             }
           },
           "event": [
@@ -747,7 +1006,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/job-vacancies"
+              "raw": "{{base_api_url}}/job-vacancies"
             },
             "body": {
               "mode": "raw",
@@ -775,10 +1034,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/applications"
+              "raw": "{{base_api_url}}/applications"
             },
             "body": {
               "mode": "raw",
@@ -809,7 +1072,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/applications"
+              "raw": "{{base_api_url}}/applications"
             }
           },
           "event": [
@@ -838,7 +1101,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/applications/{{application_id}}/accept"
+              "raw": "{{base_api_url}}/applications/{{application_id}}/accept"
             },
             "body": {
               "mode": "raw",
@@ -871,7 +1134,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/applications/{{application_id}}/reject"
+              "raw": "{{base_api_url}}/applications/{{application_id}}/reject"
             },
             "body": {
               "mode": "raw",
@@ -884,6 +1147,43 @@
               "script": {
                 "exec": [
                   "pm.test('Reject candidate', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload CV to Application",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "cv_file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_api_url}}/applications/{{application_id}}/upload-cv"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Upload CV to application', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.id) { pm.environment.set('application_id', json.data.id); }"
                 ]
               }
             }
@@ -906,7 +1206,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/helpers/resumes"
+              "raw": "{{base_api_url}}/helpers/resumes"
             }
           },
           "event": [
@@ -931,7 +1231,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}{{api_prefix}}/helpers/resumes"
+              "raw": "{{base_api_url}}/helpers/resumes"
             }
           },
           "event": [

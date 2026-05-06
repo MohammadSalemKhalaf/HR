@@ -32,6 +32,9 @@ class DatabaseSeeder extends Seeder
             'email_verified_at'=>now(),
         ]);
 
+        // Call EMS Seeder
+        $this->call(EMSSeeder::class);
+
         $jobData=json_decode(file_get_contents(database_path('data/job_data.json')), true);
         $jobApplications=json_decode(file_get_contents(database_path('data/job_applications.json')), true);
 
@@ -60,7 +63,7 @@ class DatabaseSeeder extends Seeder
                 'industry'=>$company['industry'],
                 'website'=> $company['website'],
                 'ownerId'=> $companyOwner->id,
-                ]);            
+                ]);
     }
 
     foreach($jobData['jobVacancies'] as $job){
@@ -88,9 +91,9 @@ foreach($jobApplications['jobApplications'] as $application)
 
         // $user=User::inRandomOrder()->first();
 
-        
 
-        
+
+
 
         $applicant=User::firstOrCreate([
             'email'=> fake()->unique()->safeEmail(),
