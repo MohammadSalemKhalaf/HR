@@ -1,0 +1,82 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Models\Company;
+use App\Models\Employee;
+use App\Models\User;
+use App\Services\ApiTokenService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+
+class AuthController extends BaseApiController
+{
+    public function register(Request $request, ApiTokenService $tokens): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
+            'password' => ['required', 'string', 'min:8'],
+            'role' => ['required', Rule::in(['admin', 'company_owner', 'job_seeker'])],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error('Validation failed.', $validator->errors(), 422);
+        }
+
+        $user = User::create([
+            'name' => $request->string('name'),
+            'email' => $request->string('email'),
+            'password' => Hash::make($request->string('password')),
+            'role' => $request->string('role'),
+        ]);
+
+        return $this->success('User registered successfully.', $this->authPayload($user, $tokens), 201);
+    }
+
+    public function login(Request $request, ApiTokenService $tokens): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => ['required', 'string', 'email'],
+            'password' => ['required', 'string'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error('Validation failed.', $validator->errors(), 422);
+        }
+
+        $user = User::where('email', $request->string('email'))->first();
+
+        if (! $user || ! Hash::check($request->string('password'), $user->password)) {
+            return $this->error('Invalid credentials.', [], 401);
+        }
+
+        return $this->success('Login successful.', $this->authPayload($user, $tokens));
+    }
+
+    public function me(Request $request, ApiTokenService $tokens): JsonResponse
+    {
+        $user = $request->user();
+
+        return $this->success('Current user retrieved successfully.', $this->authPayload($user, $tokens, true));
+    }
+
+    private function authPayload(User $user, ApiTokenService $tokens, bool $includeToken = true): array
+    {
+        $companyId = $this->companyIdForUser($user);
+        $employeeId = $this->employeeIdForUser($user);
+        $role = $this->effectiveRole($user);
+
+        return [
+            'token' => $includeToken ? $tokens->issue($user) : null,
+            'user_id' => $user->id,
+            'role' => $role,
+            'company_id' => $companyId,
+            'employee_id' => $employeeId,
+            'user' => $user,
+        ];
+    }
+}
