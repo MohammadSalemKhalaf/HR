@@ -21,7 +21,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/auth/register"
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -54,7 +61,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/auth/login"
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -87,7 +101,13 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/me"
+              "raw": "{{base_url}}/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "me"
+              ]
             }
           },
           "event": [
@@ -118,7 +138,13 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/vacancies"
+              "raw": "{{base_url}}/vacancies",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vacancies"
+              ]
             }
           },
           "event": [
@@ -143,13 +169,19 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/vacancies?company_id={{company_id}}",
+              "raw": "{{base_url}}/vacancies?company_id={{company_id}}",
               "query": [
                 {
                   "key": "company_id",
                   "value": "{{company_id}}",
                   "disabled": false
                 }
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vacancies"
               ]
             }
           },
@@ -205,7 +237,13 @@
               ]
             },
             "url": {
-              "raw": "{{base_api_url}}/applications"
+              "raw": "{{base_url}}/applications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "applications"
+              ]
             }
           },
           "event": [
@@ -242,7 +280,15 @@
               ]
             },
             "url": {
-              "raw": "{{base_api_url}}/applications/{{application_id}}/upload-cv"
+              "raw": "{{base_url}}/applications/{{application_id}}/upload-cv",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "applications",
+                "{{application_id}}",
+                "upload-cv"
+              ]
             }
           },
           "event": [
@@ -273,7 +319,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/auth/login"
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -311,7 +364,13 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/companies"
+              "raw": "{{base_url}}/companies",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "companies"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -342,7 +401,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/auth/register"
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -385,7 +451,13 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/departments"
+              "raw": "{{base_url}}/departments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "departments"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -420,7 +492,13 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/employees"
+              "raw": "{{base_url}}/employees",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -455,7 +533,13 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/employees"
+              "raw": "{{base_url}}/employees",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -490,7 +574,13 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/employees"
+              "raw": "{{base_url}}/employees",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -521,7 +611,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/employees?company_id={{company_id}}&department_id={{department_id}}",
+              "raw": "{{base_url}}/employees?company_id={{company_id}}&department_id={{department_id}}",
               "query": [
                 {
                   "key": "company_id",
@@ -533,6 +623,12 @@
                   "value": "{{department_id}}",
                   "disabled": false
                 }
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees"
               ]
             }
           },
@@ -558,7 +654,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/employees/{{employee_id}}"
+              "raw": "{{base_url}}/employees/{{employee_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "{{employee_id}}"
+              ]
             }
           },
           "event": [
@@ -587,7 +690,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/employees/{{employee_id}}"
+              "raw": "{{base_url}}/employees/{{employee_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "{{employee_id}}"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -620,7 +730,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/employees/{{employee_id}}/transfer-department"
+              "raw": "{{base_url}}/employees/{{employee_id}}/transfer-department",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "{{employee_id}}",
+                "transfer-department"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -653,7 +771,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/employees/{{employee_id}}/assign-manager"
+              "raw": "{{base_url}}/employees/{{employee_id}}/assign-manager",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "{{employee_id}}",
+                "assign-manager"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -682,7 +808,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/employees/{{employee_id}}/terminate"
+              "raw": "{{base_url}}/employees/{{employee_id}}/terminate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "{{employee_id}}",
+                "terminate"
+              ]
             }
           },
           "event": [
@@ -713,7 +847,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/auth/login"
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -747,7 +888,13 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/me"
+              "raw": "{{base_url}}/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "me"
+              ]
             }
           },
           "event": [
@@ -776,7 +923,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/leave/apply"
+              "raw": "{{base_url}}/leave/apply",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "leave",
+                "apply"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -807,7 +961,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/employees/{{employee_id}}/check-in"
+              "raw": "{{base_url}}/employees/{{employee_id}}/check-in",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "{{employee_id}}",
+                "check-in"
+              ]
             }
           },
           "event": [
@@ -832,7 +994,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/employees/{{employee_id}}/check-out"
+              "raw": "{{base_url}}/employees/{{employee_id}}/check-out",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "{{employee_id}}",
+                "check-out"
+              ]
             }
           },
           "event": [
@@ -857,7 +1027,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/attendance?employee_id={{employee_id}}&from_date=2024-05-01&to_date=2024-05-31",
+              "raw": "{{base_url}}/attendance?employee_id={{employee_id}}&from_date=2024-05-01&to_date=2024-05-31",
               "query": [
                 {
                   "key": "employee_id",
@@ -874,6 +1044,12 @@
                   "value": "2024-05-31",
                   "disabled": false
                 }
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance"
               ]
             }
           },
@@ -905,7 +1081,13 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/leaves?employee_id={{employee_id}}"
+              "raw": "{{base_url}}/leaves?employee_id={{employee_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "leaves"
+              ]
             }
           },
           "event": [
@@ -934,7 +1116,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/leave/approve"
+              "raw": "{{base_url}}/leave/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "leave",
+                "approve"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -967,7 +1156,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/leave/reject"
+              "raw": "{{base_url}}/leave/reject",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "leave",
+                "reject"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -1006,7 +1202,13 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/job-vacancies"
+              "raw": "{{base_url}}/job-vacancies",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "job-vacancies"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -1041,7 +1243,13 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/applications"
+              "raw": "{{base_url}}/applications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "applications"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -1072,7 +1280,13 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/applications"
+              "raw": "{{base_url}}/applications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "applications"
+              ]
             }
           },
           "event": [
@@ -1101,7 +1315,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/applications/{{application_id}}/accept"
+              "raw": "{{base_url}}/applications/{{application_id}}/accept",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "applications",
+                "{{application_id}}",
+                "accept"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -1134,7 +1356,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/applications/{{application_id}}/reject"
+              "raw": "{{base_url}}/applications/{{application_id}}/reject",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "applications",
+                "{{application_id}}",
+                "reject"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -1173,7 +1403,15 @@
               ]
             },
             "url": {
-              "raw": "{{base_api_url}}/applications/{{application_id}}/upload-cv"
+              "raw": "{{base_url}}/applications/{{application_id}}/upload-cv",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "applications",
+                "{{application_id}}",
+                "upload-cv"
+              ]
             }
           },
           "event": [
@@ -1206,7 +1444,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/helpers/resumes"
+              "raw": "{{base_url}}/helpers/resumes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "helpers",
+                "resumes"
+              ]
             }
           },
           "event": [
@@ -1231,7 +1476,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_api_url}}/helpers/resumes"
+              "raw": "{{base_url}}/helpers/resumes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "helpers",
+                "resumes"
+              ]
             }
           },
           "event": [
