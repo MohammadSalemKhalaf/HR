@@ -1,0 +1,1505 @@
+{
+  "info": {
+    "_postman_id": "ems-backoffice-collection",
+    "name": "EMS Backoffice",
+    "description": "EMS Backoffice API workflows for job seekers, admins, companies, employees, recruitment, and leaves.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Public Job Seeker Auth",
+      "description": "Public registration is only for job seekers.",
+      "item": [
+        {
+          "name": "Register Job Seeker",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Job Seeker\",\n  \"email\": \"seeker{{$timestamp}}@example.com\",\n  \"password\": \"Password@123\",\n  \"role\": \"job_seeker\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Register job seeker', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.token) { pm.environment.set('seeker_token', json.data.token); pm.environment.set('token', json.data.token); }",
+                  "if (json.data && json.data.user_id) { pm.environment.set('seeker_user_id', json.data.user_id); pm.environment.set('user_id', json.data.user_id); }",
+                  "if (json.data && json.data.role) { pm.environment.set('role', json.data.role); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Job Seeker",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{seeker_email}}\",\n  \"password\": \"{{seeker_password}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Login job seeker', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.token) { pm.environment.set('seeker_token', json.data.token); pm.environment.set('token', json.data.token); }",
+                  "if (json.data && json.data.user_id) { pm.environment.set('seeker_user_id', json.data.user_id); pm.environment.set('user_id', json.data.user_id); }",
+                  "if (json.data && json.data.role) { pm.environment.set('role', json.data.role); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{seeker_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "me"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Current user', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Job Seeker",
+      "description": "Job seeker vacancy discovery and application flow.",
+      "item": [
+        {
+          "name": "Get All Vacancies",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{seeker_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vacancies",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vacancies"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Get all vacancies', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filter Vacancies By Company",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{seeker_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vacancies?company_id={{company_id}}",
+              "query": [
+                {
+                  "key": "company_id",
+                  "value": "{{company_id}}",
+                  "disabled": false
+                }
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vacancies"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Filter vacancies by company', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Apply To Vacancy",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{seeker_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "jobVacancyId",
+                  "value": "{{vacancy_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "job_vacancy_id",
+                  "value": "{{vacancy_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "userId",
+                  "value": "{{seeker_user_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "user_id",
+                  "value": "{{seeker_user_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "cv",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/applications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "applications"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Apply to vacancy', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.id) { pm.environment.set('application_id', json.data.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload CV To Existing Application",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{seeker_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "cv",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/applications/{{application_id}}/upload-cv",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "applications",
+                "{{application_id}}",
+                "upload-cv"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Upload CV to existing application', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Platform Admin",
+      "description": "Admin login and company provisioning.",
+      "item": [
+        {
+          "name": "Login Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Login admin', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.token) { pm.environment.set('admin_token', json.data.token); pm.environment.set('token', json.data.token); }",
+                  "if (json.data && json.data.user_id) { pm.environment.set('admin_user_id', json.data.user_id); pm.environment.set('user_id', json.data.user_id); }",
+                  "if (json.data && json.data.company_id) { pm.environment.set('company_id', json.data.company_id); }",
+                  "if (json.data && json.data.role) { pm.environment.set('role', json.data.role); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Company",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/companies",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "companies"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme Corporation\",\n  \"address\": \"123 Business Street, City\",\n  \"industry\": \"Technology\",\n  \"website\": \"https://acme.example.com\",\n  \"owner_id\": \"{{admin_user_id}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Create company', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.id) { pm.environment.set('company_id', json.data.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Company Owner",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme Corporation\",\n  \"address\": \"123 Business Street, City\",\n  \"industry\": \"Technology\",\n  \"website\": \"https://acme.example.com\",\n  \"owner_id\": \"{{admin_user_id}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Create company owner', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.token) { pm.environment.set('owner_token', json.data.token); }",
+                  "if (json.data && json.data.user_id) { pm.environment.set('owner_user_id', json.data.user_id); }",
+                  "if (json.data && json.data.role) { pm.environment.set('owner_role', json.data.role); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Company Management",
+      "description": "Department and employee provisioning handled by company admins.",
+      "item": [
+        {
+          "name": "Create Department",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/departments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "departments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company_id\": \"{{company_id}}\",\n  \"name\": \"Engineering\",\n  \"code\": \"ENG-001\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Create department', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.id) { pm.environment.set('department_id', json.data.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create HR Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employees",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"user_id\": \"{{hr_user_id}}\", \"company_id\": \"{{company_id}}\", \"department_id\": \"{{department_id}}\", \"employee_number\": \"EMP-HR-001\", \"job_title\": \"HR Officer\", \"status\": \"active\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Create HR employee', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.id) { pm.environment.set('hr_employee_id', json.data.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Manager Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employees",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"user_id\": \"{{manager_user_id}}\", \"company_id\": \"{{company_id}}\", \"department_id\": \"{{department_id}}\", \"employee_number\": \"EMP-MGR-001\", \"job_title\": \"Manager\", \"status\": \"active\", \"manager_id\": \"{{hr_employee_id}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Create manager employee', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.id) { pm.environment.set('manager_employee_id', json.data.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Normal Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employees",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"user_id\": \"{{employee_user_id}}\", \"company_id\": \"{{company_id}}\", \"department_id\": \"{{department_id}}\", \"employee_number\": \"EMP-001\", \"job_title\": \"Backend Developer\", \"status\": \"active\", \"manager_id\": \"{{manager_employee_id}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Create employee', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.id) { pm.environment.set('employee_id', json.data.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Employees",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employees?company_id={{company_id}}&department_id={{department_id}}",
+              "query": [
+                {
+                  "key": "company_id",
+                  "value": "{{company_id}}",
+                  "disabled": false
+                },
+                {
+                  "key": "department_id",
+                  "value": "{{department_id}}",
+                  "disabled": false
+                }
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('List employees', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Employee Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employees/{{employee_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "{{employee_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Employee details', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Employee",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employees/{{employee_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "{{employee_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"job_title\": \"Senior Software Engineer\",\n  \"status\": \"active\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Update employee', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Transfer Department",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employees/{{employee_id}}/transfer-department",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "{{employee_id}}",
+                "transfer-department"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"department_id\": \"{{department_id}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Transfer department', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Assign Manager",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employees/{{employee_id}}/assign-manager",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "{{employee_id}}",
+                "assign-manager"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"manager_employee_id\": \"{{manager_employee_id}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Assign manager', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Terminate Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employees/{{employee_id}}/terminate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "{{employee_id}}",
+                "terminate"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Terminate employee', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Employee Self Service",
+      "description": "Employee login and self service actions supported by current API.",
+      "item": [
+        {
+          "name": "Login Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{employee_email}}\", \"password\": \"{{employee_password}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Login employee', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.token) { pm.environment.set('employee_token', json.data.token); pm.environment.set('token', json.data.token); }",
+                  "if (json.data && json.data.user_id) { pm.environment.set('employee_user_id', json.data.user_id); pm.environment.set('user_id', json.data.user_id); }",
+                  "if (json.data && json.data.employee_id) { pm.environment.set('employee_id', json.data.employee_id); }",
+                  "if (json.data && json.data.role) { pm.environment.set('role', json.data.role); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{employee_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "me"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('My profile', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Request Leave",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{employee_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/leave/apply",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "leave",
+                "apply"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"employee_id\": \"{{employee_id}}\", \"leave_type\": \"{{leave_type}}\", \"start_date\": \"{{leave_start_date}}\", \"end_date\": \"{{leave_end_date}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Request leave', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.id) { pm.environment.set('leave_id', json.data.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Check In",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employees/{{employee_id}}/check-in",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "{{employee_id}}",
+                "check-in"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Check-in successful', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Check Out",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employees/{{employee_id}}/check-out",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "{{employee_id}}",
+                "check-out"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Check-out successful', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Attendance Records",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/attendance?employee_id={{employee_id}}&from_date=2024-05-01&to_date=2024-05-31",
+              "query": [
+                {
+                  "key": "employee_id",
+                  "value": "{{employee_id}}",
+                  "disabled": false
+                },
+                {
+                  "key": "from_date",
+                  "value": "2024-05-01",
+                  "disabled": false
+                },
+                {
+                  "key": "to_date",
+                  "value": "2024-05-31",
+                  "disabled": false
+                }
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Get attendance records', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Leaves",
+      "description": "Leave review and decision flow.",
+      "item": [
+        {
+          "name": "List Leaves",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/leaves?employee_id={{employee_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "leaves"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('List leaves', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Approve Leave",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/leave/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "leave",
+                "approve"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leave_id\": \"{{leave_id}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Approve leave', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject Leave",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/leave/reject",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "leave",
+                "reject"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leave_id\": \"{{leave_id}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Reject leave', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Recruitment Flow",
+      "description": "Vacancy and application processing.",
+      "item": [
+        {
+          "name": "Create Vacancy",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/job-vacancies",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "job-vacancies"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"company_id\": \"{{company_id}}\", \"department_id\": \"{{department_id}}\", \"title\": \"{{vacancy_title}}\", \"description\": \"{{vacancy_description}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Create vacancy', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.id) { pm.environment.set('vacancy_id', json.data.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Apply To Vacancy",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/applications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "applications"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"vacancy_id\": \"{{vacancy_id}}\", \"applicant_name\": \"{{seeker_name}}\", \"applicant_email\": \"{{seeker_email}}\", \"resume_id\": \"{{resume_id}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Apply to vacancy', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.id) { pm.environment.set('application_id', json.data.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Review Applications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/applications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "applications"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Review applications', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Accept Candidate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/applications/{{application_id}}/accept",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "applications",
+                "{{application_id}}",
+                "accept"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Accept candidate', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject Candidate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/applications/{{application_id}}/reject",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "applications",
+                "{{application_id}}",
+                "reject"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Reject candidate', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload CV to Application",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "cv_file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/applications/{{application_id}}/upload-cv",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "applications",
+                "{{application_id}}",
+                "upload-cv"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Upload CV to application', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.id) { pm.environment.set('application_id', json.data.id); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Helpers",
+      "description": "Support endpoints for workflow data.",
+      "item": [
+        {
+          "name": "List Resumes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{seeker_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/helpers/resumes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "helpers",
+                "resumes"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('List resumes', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload Resume",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{seeker_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/helpers/resumes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "helpers",
+                "resumes"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Upload resume', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.id) { pm.environment.set('resume_id', json.data.id); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
