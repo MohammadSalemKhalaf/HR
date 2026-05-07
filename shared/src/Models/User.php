@@ -9,12 +9,24 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+/**
+ * Class User
+ *
+ * @property string $id
+ * @property string $name
+ * @property string $email
+ * @property \Illuminate\Support\Carbon|null $email_verified_at
+ * @property string $password
+ * @property string $role
+ * @property string|null $remember_token
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable,HasUuids,SoftDeletes;
+    use HasFactory, Notifiable, HasUuids, SoftDeletes;
 
-    protected $keyType="string";
+    protected $keyType = 'string';
     public $incrementing = false;
     protected $table = "users";
 
@@ -34,7 +46,6 @@ class User extends Authenticatable
         'deleted_at',
     ];
 
- 
     protected $hidden = [
         'password',
         'remember_token',
@@ -66,5 +77,10 @@ class User extends Authenticatable
       public function company()
     {
         return $this->hasOne(Company::class,'ownerId','id');
+    }
+
+    public function employee()
+    {
+        return $this->hasOne(Employee::class, 'user_id', 'id');
     }
 }

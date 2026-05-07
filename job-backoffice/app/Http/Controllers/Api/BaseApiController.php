@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Schema;
 
 class BaseApiController extends Controller
 {
@@ -35,22 +36,40 @@ class BaseApiController extends Controller
 
     protected function effectiveRole(User $user): string
     {
-        return Employee::where('user_id', $user->id)->exists() ? 'employee' : $user->role;
+        if (! Schema::hasTable('employees')) {
+            return $user->role === 'company_owner' ? 'company' : $user->role;
+        }
+
+        if (Employee::where('user_id', $user->id)->exists()) {
+            return 'employee';
+        }
+
+        return $user->role === 'company_owner' ? 'company' : $user->role;
     }
 
     protected function companyIdForUser(User $user): ?string
     {
-        $employeeCompany = Employee::where('user_id', $user->id)->value('company_id');
+        if (Schema::hasTable('employees')) {
+            $employeeCompany = Employee::where('user_id', $user->id)->value('company_id');
 
-        if ($employeeCompany) {
-            return $employeeCompany;
+            if ($employeeCompany) {
+                return $employeeCompany;
+            }
         }
 
-        return Company::where('ownerId', $user->id)->value('id');
+        if (Schema::hasTable('companies')) {
+            return Company::where('ownerId', $user->id)->value('id');
+        }
+
+        return null;
     }
 
     protected function employeeIdForUser(User $user): ?string
     {
+        if (! Schema::hasTable('employees')) {
+            return null;
+        }
+
         return Employee::where('user_id', $user->id)->value('id');
     }
 }

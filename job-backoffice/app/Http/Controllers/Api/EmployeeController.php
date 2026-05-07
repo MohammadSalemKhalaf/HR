@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Employee;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class EmployeeController extends BaseApiController
 {
@@ -28,6 +32,9 @@ class EmployeeController extends BaseApiController
     {
         $validator = Validator::make($request->all(), [
             'user_id' => ['nullable', 'exists:users,id', 'unique:employees,user_id'],
+            'name' => ['required_without:user_id', 'string', 'max:255'],
+            'email' => ['required_without:user_id', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
+            'password' => ['required_without:user_id', 'string', 'min:8'],
             'company_id' => ['required', 'exists:companies,id'],
             'department_id' => ['nullable', 'exists:departments,id'],
             'employee_number' => ['nullable', 'string', 'unique:employees,employee_number'],
@@ -41,16 +48,34 @@ class EmployeeController extends BaseApiController
             return $this->error('Validation failed.', $validator->errors(), 422);
         }
 
-        $employee = Employee::create([
-            'user_id' => $request->input('user_id'),
-            'company_id' => $request->string('company_id'),
-            'department_id' => $request->input('department_id'),
-            'employee_number' => $request->input('employee_number'),
-            'job_title' => $request->input('job_title'),
-            'hired_at' => $request->input('hired_at'),
-            'status' => $request->input('status', 'probation'),
-            'manager_id' => $request->input('manager_id'),
-        ]);
+        $employee = DB::transaction(function () use ($request) {
+            $user = null;
+
+            if ($request->filled('user_id')) {
+                $user = User::findOrFail($request->string('user_id'));
+                if ($user->role !== 'employee') {
+                    $user->forceFill(['role' => 'employee'])->save();
+                }
+            } else {
+                $user = User::create([
+                    'name' => $request->string('name'),
+                    'email' => $request->string('email'),
+                    'password' => Hash::make($request->string('password')),
+                    'role' => 'employee',
+                ]);
+            }
+
+            return Employee::create([
+                'user_id' => $user->id,
+                'company_id' => $request->string('company_id'),
+                'department_id' => $request->input('department_id'),
+                'employee_number' => $request->input('employee_number'),
+                'job_title' => $request->input('job_title'),
+                'hired_at' => $request->input('hired_at'),
+                'status' => $request->input('status', 'probation'),
+                'manager_id' => $request->input('manager_id'),
+            ]);
+        });
 
         return $this->success('Employee created successfully.', $employee->load(['user', 'company', 'department', 'manager']), 201);
     }

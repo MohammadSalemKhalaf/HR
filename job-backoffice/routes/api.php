@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
+    Route::post('company/login', [AuthController::class, 'companyLogin']);
+    Route::post('employee/login', [AuthController::class, 'employeeLogin']);
 });
 
 Route::middleware('token.auth')->group(function () {
@@ -36,10 +38,13 @@ Route::middleware('token.auth')->group(function () {
     Route::post('employees/{id}/terminate', [EmployeeController::class, 'terminate']);
     Route::post('employees/{id}/assign-manager', [EmployeeController::class, 'assignManager']);
     Route::post('employees/{id}/transfer-department', [EmployeeController::class, 'transferDepartment']);
+    Route::post('attendance/check-in', [AttendanceController::class, 'checkIn']);
+    Route::post('attendance/check-out', [AttendanceController::class, 'checkOut']);
     Route::post('employees/{id}/check-in', [AttendanceController::class, 'checkIn']);
     Route::post('employees/{id}/check-out', [AttendanceController::class, 'checkOut']);
 
     Route::get('attendance', [AttendanceController::class, 'index']);
+    Route::get('vacancies', [JobVacancyController::class, 'index']);
     Route::post('job-vacancies', [JobVacancyController::class, 'store']);
     Route::get('job-vacancies/{id}', [JobVacancyController::class, 'show']);
 

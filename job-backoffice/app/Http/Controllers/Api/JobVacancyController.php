@@ -12,7 +12,13 @@ class JobVacancyController extends BaseApiController
 {
     public function index(): JsonResponse
     {
-        return $this->success('Job vacancies retrieved successfully.', JobVacancy::with('company')->latest()->get());
+        $query = JobVacancy::with('company')->latest();
+
+        if (request()->filled('company_id')) {
+            $query->where('companyId', request()->string('company_id'));
+        }
+
+        return $this->success('Job vacancies retrieved successfully.', $query->get());
     }
 
     public function store(Request $request): JsonResponse

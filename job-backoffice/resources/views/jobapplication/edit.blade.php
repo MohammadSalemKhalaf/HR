@@ -1,133 +1,60 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Edit Applicant Status
-        </h2>
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <p class="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Operations</p>
+                <h2 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">Edit Applicant Status</h2>
+                <p class="mt-2 text-sm text-slate-600">Review the candidate and update the application decision.</p>
+            </div>
+
+            <a href="{{ route('job-applications.show', $jobApplication->id) }}" class="inline-flex items-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Back</a>
+        </div>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-
-            <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
-
-                {{-- Card Header --}}
-                <div class="bg-gradient-to-r from-indigo-50 to-blue-50 px-8 py-6 border-b border-indigo-100">
-                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                        <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        Job Application Details
-                    </h3>
+    <div class="mx-auto max-w-4xl">
+        <div class="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-lg shadow-slate-950/5 backdrop-blur sm:p-8">
+            <div class="grid gap-4 md:grid-cols-2">
+                <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-cyan-700">Applicant Name</p>
+                    <p class="mt-2 font-medium text-slate-900">{{ $jobApplication->user?->name ?? '-' }}</p>
                 </div>
-
-                {{-- Card Content --}}
-                <div class="px-8 py-6">
-
-                    {{-- Applicant Information Grid --}}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-gray-700 mb-8">
-
-                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                            <strong class="block text-xs font-semibold text-indigo-600 uppercase tracking-wide mb-1">
-                                Applicant Name
-                            </strong>
-                            <p class="text-base font-medium text-gray-900">
-                                {{ $jobApplication->user?->name ?? '-' }}
-                            </p>
-                        </div>
-
-                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                            <strong class="block text-xs font-semibold text-indigo-600 uppercase tracking-wide mb-1">
-                                Job Vacancy
-                            </strong>
-                            <p class="text-base font-medium text-gray-900">
-                                {{ $jobApplication->jobvacancy?->title ?? '-' }}
-                            </p>
-                        </div>
-
-                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                            <strong class="block text-xs font-semibold text-indigo-600 uppercase tracking-wide mb-1">
-                                Company
-                            </strong>
-                            <p class="text-base font-medium text-gray-900">
-                                {{ $jobApplication->jobvacancy?->company?->name ?? '-' }}
-                            </p>
-                        </div>
-
-                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                            <strong class="block text-xs font-semibold text-indigo-600 uppercase tracking-wide mb-1">
-                                AI Generated Score
-                            </strong>
-
-                            @if($jobApplication->aiGeneratedScore)
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">
-                                    {{ $jobApplication->aiGeneratedScore }}
-                                </span>
-                            @else
-                                -
-                            @endif
-                        </div>
-
-                    </div>
-
-                    {{-- AI Feedback --}}
-                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-8">
-                        <strong class="block text-xs font-semibold text-indigo-600 uppercase tracking-wide mb-2">
-                            AI Generated Feedback
-                        </strong>
-                        <p class="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
-                            {{ $jobApplication->aiGeneratedFeedback ?? 'No feedback available' }}
-                        </p>
-                    </div>
-
-                    {{-- Update Form --}}
-                    <form action="{{ route('job-applications.update', $jobApplication->id) }}" method="POST">
-                        @csrf
-                        @method('PUT')
-
-                        <div class="mb-8">
-                            <label class="block text-sm font-medium text-gray-700 mb-3">
-                                Application Status
-                            </label>
-
-                            <select name="status"
-                                    class="w-full px-4 py-3 border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-gray-50">
-
-                                <option value="pending" {{ $jobApplication->status == 'pending' ? 'selected' : '' }}>
-                                    ⏳ Pending - Under Review
-                                </option>
-
-                                <option value="accepted" {{ $jobApplication->status == 'accepted' ? 'selected' : '' }}>
-                                    ✅ Accepted - Qualified
-                                </option>
-
-                                <option value="rejected" {{ $jobApplication->status == 'rejected' ? 'selected' : '' }}>
-                                    ❌ Rejected - Disqualified
-                                </option>
-
-                            </select>
-                        </div>
-
-                        {{-- Buttons --}}
-                        <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-
-                            <a href="{{ route('job-applications.index', $jobApplication->id) }}"
-                               class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-sm transition-all shadow-md">
-                                Cancel
-                            </a>
-
-                            {{-- 🔵 Updated Button --}}
-                            <button type="submit"
-                                class="px-6 py-3 bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 text-white font-bold rounded-xl text-sm transition-all shadow-lg">
-                                Update Applicant Status
-                            </button>
-
-                        </div>
-
-                    </form>
-
+                <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-cyan-700">Job Vacancy</p>
+                    <p class="mt-2 font-medium text-slate-900">{{ $jobApplication->jobvacancy?->title ?? '-' }}</p>
+                </div>
+                <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-cyan-700">Company</p>
+                    <p class="mt-2 font-medium text-slate-900">{{ $jobApplication->jobvacancy?->company?->name ?? '-' }}</p>
+                </div>
+                <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-cyan-700">AI Generated Score</p>
+                    <p class="mt-2 font-medium text-slate-900">{{ $jobApplication->aiGeneratedScore ?? '-' }}</p>
                 </div>
             </div>
+
+            <div class="mt-6 rounded-3xl border border-slate-200 bg-white p-5">
+                <p class="text-sm font-semibold text-slate-900">AI Generated Feedback</p>
+                <p class="mt-3 whitespace-pre-line text-sm leading-7 text-slate-600">{{ $jobApplication->aiGeneratedFeedback ?? 'No feedback available' }}</p>
+            </div>
+
+            <form action="{{ route('job-applications.update', $jobApplication->id) }}" method="POST" class="mt-6 space-y-6 border-t border-slate-200 pt-6">
+                @csrf
+                @method('PUT')
+
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">Application Status</label>
+                    <select name="status" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100">
+                        <option value="pending" {{ $jobApplication->status == 'pending' ? 'selected' : '' }}>Pending - Under Review</option>
+                        <option value="accepted" {{ $jobApplication->status == 'accepted' ? 'selected' : '' }}>Accepted - Qualified</option>
+                        <option value="rejected" {{ $jobApplication->status == 'rejected' ? 'selected' : '' }}>Rejected - Disqualified</option>
+                    </select>
+                </div>
+
+                <div class="flex flex-wrap justify-end gap-3 border-t border-slate-200 pt-6">
+                    <a href="{{ route('job-applications.show', $jobApplication->id) }}" class="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Cancel</a>
+                    <button type="submit" class="rounded-full bg-cyan-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-500">Update Applicant Status</button>
+                </div>
+            </form>
         </div>
     </div>
 </x-app-layout>

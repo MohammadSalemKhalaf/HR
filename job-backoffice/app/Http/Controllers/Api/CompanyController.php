@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Company;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
 class CompanyController extends BaseApiController
@@ -28,19 +31,38 @@ class CompanyController extends BaseApiController
             'industry' => ['required', 'string', 'max:255'],
             'website' => ['nullable', 'string', 'max:255'],
             'owner_id' => ['nullable', 'exists:users,id'],
+            'email' => ['nullable', 'string', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['nullable', 'string', 'min:8'],
         ]);
 
         if ($validator->fails()) {
             return $this->error('Validation failed.', $validator->errors(), 422);
         }
 
-        $company = Company::create([
-            'name' => $request->input('name'),
-            'address' => $request->input('address'),
-            'industry' => $request->input('industry'),
-            'website' => $request->input('website'),
-            'ownerId' => $request->input('owner_id', $request->user()->id),
-        ]);
+        $company = DB::transaction(function () use ($request) {
+            $user = null;
+
+            if ($request->filled('owner_id')) {
+                $user = User::findOrFail($request->input('owner_id'));
+            } elseif ($request->filled('email') && $request->filled('password')) {
+                $user = User::create([
+                    'name' => $request->input('name'),
+                    'email' => $request->input('email'),
+                    'password' => Hash::make($request->input('password')),
+                    'role' => 'company',
+                ]);
+            } else {
+                $user = $request->user();
+            }
+
+            return Company::create([
+                'name' => $request->input('name'),
+                'address' => $request->input('address'),
+                'industry' => $request->input('industry'),
+                'website' => $request->input('website'),
+                'ownerId' => $user->id,
+            ]);
+        });
 
         return $this->success('Company created successfully.', $company->load('owner'), 201);
     }

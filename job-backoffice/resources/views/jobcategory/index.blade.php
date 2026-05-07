@@ -1,144 +1,83 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Job Categories
-                @if(request('archived') == 'true')
-                    <span class="text-sm text-gray-500 ml-2">(Archived)</span>
-                @endif
-            </h2>
-        </div>
-    </x-slot>
-
-    <div class="p-6">
-
-        {{-- Success Message --}}
-        @if (session('success'))
-            <div class="mb-4 px-4 py-3 rounded-md bg-green-100 border border-green-400 text-green-700">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        {{-- Top Bar --}}
-        <div class="flex justify-between items-center mb-6">
-
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-                <h3 class="text-lg font-semibold text-gray-700">
-                    Categories List
-                    <span class="text-sm text-gray-500 ml-2">
-                        (Total: {{ $categories->total() }})
-                    </span>
-                </h3>
+                <p class="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Administration</p>
+                <h2 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">
+                    Job Categories
+                    @if(request('archived') == 'true')
+                        <span class="ml-2 text-sm font-medium text-slate-500">(Archived)</span>
+                    @endif
+                </h2>
+                <p class="mt-2 text-sm text-slate-600">Organize vacancies into clear hiring categories.</p>
             </div>
 
-            <div class="flex items-center space-x-3">
-
-                {{-- Toggle --}}
+            <div class="flex flex-wrap gap-3">
                 @if(request('archived') == 'true')
-
-                    <a href="{{ route('job-categories.index') }}"
-                       class="px-4 py-2 bg-black text-white text-sm rounded-md hover:bg-gray-800">
+                    <a href="{{ route('job-categories.index') }}" class="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">
                         Active Categories
                     </a>
-
                 @else
-
-                    <a href="{{ route('job-categories.index', ['archived' => 'true']) }}"
-                       class="px-4 py-2 bg-gray-700 text-white text-sm rounded-md hover:bg-gray-800">
+                    <a href="{{ route('job-categories.index', ['archived' => 'true']) }}" class="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
                         Archived Categories
                     </a>
 
-                    <a href="{{ route('job-categories.create') }}"
-                       class="px-5 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">
-                        ➕ Add Category
+                    <a href="{{ route('job-categories.create') }}" class="rounded-full bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500">
+                        Add Category
                     </a>
-
                 @endif
-
             </div>
         </div>
+    </x-slot>
 
-        {{-- Table --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-200">
+    <div class="rounded-[2rem] border border-white/70 bg-white/85 shadow-lg shadow-slate-950/5 backdrop-blur overflow-hidden">
+        <div class="border-b border-slate-200 px-6 py-4">
+            <p class="text-sm font-medium text-slate-500">Categories List</p>
+            <h3 class="text-lg font-semibold text-slate-900">Total {{ $categories->total() }}</h3>
+        </div>
 
-                <thead class="bg-gray-50">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                            Category Name
-                        </th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-                            Actions
-                        </th>
+                        <th class="px-6 py-3 text-left">Category Name</th>
+                        <th class="px-6 py-3 text-right">Actions</th>
                     </tr>
                 </thead>
 
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-slate-100 bg-white text-sm">
                     @forelse ($categories as $category)
-                        <tr class="hover:bg-gray-50 transition">
-
-                            <td class="px-6 py-4 text-gray-800 font-medium">
-                                {{ $category->name }}
-                            </td>
-
-                            <td class="px-6 py-4 text-right space-x-3">
-
-                                @if(request('archived') == 'true')
-
-                                    {{-- Restore --}}
-                                    <form action="{{ route('job-categories.restore', $category->id) }}"
-                                          method="POST"
-                                          class="inline-block"
-                                          onsubmit="return confirm('Restore this category?')">
-                                        @csrf
-                                        <button type="submit"
-                                                class="text-green-600 hover:text-green-800 font-medium">
-                                            ♻️ Restore
-                                        </button>
-                                    </form>
-
-                                @else
-
-                                    {{-- Edit --}}
-                                    <a href="{{ route('job-categories.edit', $category->id) }}"
-                                       class="text-blue-600 hover:text-blue-800 font-medium">
-                                        ✏️ Edit
-                                    </a>
-
-                                    {{-- Archive --}}
-                                    <form action="{{ route('job-categories.destroy', $category->id) }}"
-                                          method="POST"
-                                          class="inline-block"
-                                          onsubmit="return confirm('Are you sure?')">
-                                        @csrf
-                                        @method('DELETE')
-
-                                        <button type="submit"
-                                                class="text-red-600 hover:text-red-800 font-medium">
-                                            🗑 Archive
-                                        </button>
-                                    </form>
-
-                                @endif
-
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-6 py-4 font-medium text-slate-900">{{ $category->name }}</td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end gap-3">
+                                    @if(request('archived') == 'true')
+                                        <form action="{{ route('job-categories.restore', $category->id) }}" method="POST" onsubmit="return confirm('Restore this category?')">
+                                            @csrf
+                                            <button type="submit" class="font-semibold text-emerald-600 hover:text-emerald-700">Restore</button>
+                                        </form>
+                                    @else
+                                        <a href="{{ route('job-categories.edit', $category->id) }}" class="font-semibold text-cyan-700 hover:text-cyan-800">Edit</a>
+                                        <form action="{{ route('job-categories.destroy', $category->id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="font-semibold text-rose-600 hover:text-rose-700">Archive</button>
+                                        </form>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
-
                     @empty
                         <tr>
-                            <td colspan="2" class="px-6 py-6 text-center text-gray-500">
-                                No categories found.
-                            </td>
+                            <td colspan="2" class="px-6 py-12 text-center text-slate-500">No categories found.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
 
-        {{-- Pagination --}}
-        <div class="mt-6">
+        <div class="border-t border-slate-200 px-6 py-4">
             {{ $categories->withQueryString()->links() }}
         </div>
-
     </div>
 </x-app-layout>

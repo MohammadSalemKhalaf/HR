@@ -45,7 +45,7 @@ public function show(?string $id = null)
     if ($id) {
         $company = Company::findOrFail($id);
     } else {
-        $company = Company::where('ownerId', auth::id())->firstOrFail();
+        $company = Company::where('ownerId', Auth::id())->firstOrFail();
     }
 
     return view('company.show', compact('company'));
@@ -53,28 +53,29 @@ public function show(?string $id = null)
 
 public function store(CompanyCreateRequest $request)
 {
-    if ($request->owner_type === 'new') {
 
-        $user = User::create([
-            'name' => $request->new_owner_name,
-            'email' => $request->new_owner_email,
-            'password' =>Hash::make($request->new_owner_password),
+        // create or reuse user by provided owner email/password
+        $ownerEmail = $request->input('email');
+        $ownerPassword = $request->input('password');
+        $ownerName = $request->input('owner_name', $ownerEmail);
+
+        $user = User::firstOrCreate(
+            ['email' => $ownerEmail],
+            [
+                'name' => $ownerName,
+                'password' => Hash::make($ownerPassword),
+                'role' => 'company',
+                'email_verified_at' => now(),
+            ]
+        );
+
+        Company::create([
+            'name' => $request->name,
+            'industry' => $request->industry,
+            'address' => $request->address,
+            'website' => $request->website,
+            'ownerId' => $user->id,
         ]);
-
-        $ownerId = $user->id;
-
-    } else {
-
-        $ownerId = $request->ownerId;
-    }
-
-    Company::create([
-        'name' => $request->name,
-        'industry' => $request->industry,
-        'address' => $request->address,
-        'website' => $request->website,
-        'ownerId' => $ownerId,
-    ]);
 
     return redirect()
         ->route('companies.index')
@@ -88,7 +89,7 @@ public function store(CompanyCreateRequest $request)
         $company = Company::findOrFail($id);
     } else {
         // company owner
-        $company = Company::where('ownerId', auth::user()->id)->firstOrFail();
+        $company = Company::where('ownerId', Auth::user()->id)->firstOrFail();
     }
 
     $owners = User::all();
@@ -100,11 +101,11 @@ public function update(CompanyUpdateRequest $request, ?string $id = null)
 {
     $company = $id
         ? Company::findOrFail($id) // admin
-        : auth::user()->company; // owner
+        : Auth::user()->company; // owner
 
     $company->update($request->validated());
 
-    if (auth::user()->role === 'admin') {
+    if (Auth::user()->role === 'admin') {
         return redirect()
             ->route('companies.show', $company->id)
             ->with('success', 'Company updated successfully');

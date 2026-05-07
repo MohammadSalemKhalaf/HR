@@ -13,7 +13,7 @@ class DashboardController extends Controller
     
   public function index()
 {
-    if (auth::user()->role == 'admin') {
+    if (Auth::user()->role == 'admin') {
         $data = $this->admin();
     } else {
         $data = $this->companydashboard();
@@ -63,7 +63,7 @@ class DashboardController extends Controller
 
   private function companydashboard()
 {
-    $userId = auth::id();
+    $userId = Auth::id();
 
     // Active users 
     $activeUsers = User::where('role', 'job_seeker')

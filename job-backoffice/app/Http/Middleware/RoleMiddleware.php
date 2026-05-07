@@ -17,14 +17,12 @@ class RoleMiddleware
      */
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        if(auth::check()){
-            $role = auth::user()->role;
-            // dd($request->user()->role, $roles);
-            $hasAccess = in_array($role,$roles);
-            if(!$hasAccess){
+        if (Auth::check()) {
+            $role = Auth::user()->role;
+            $hasAccess = in_array($role, $roles);
+            if (! $hasAccess) {
                 abort(403);
             }
-
         }
         return $next($request);
     }

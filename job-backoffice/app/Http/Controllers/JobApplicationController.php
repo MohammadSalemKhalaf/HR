@@ -17,7 +17,7 @@ class JobApplicationController extends Controller
     $query = JobApplication::with(['jobvacancy.company', 'user'])
                 ->latest();
 
-    if (Auth::user()->role === 'company_owner') {
+    if (Auth::user()->company || \App\Models\Company::where('ownerId', Auth::id())->exists()) {
 
         $query->whereHas('jobvacancy.company', function ($q) {
             $q->where('ownerId', Auth::id());

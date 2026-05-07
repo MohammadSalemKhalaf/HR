@@ -15,7 +15,7 @@ it('converts an accepted application into an employee automatically', function (
         'name' => 'Hiring Owner',
         'email' => 'hiring-owner@example.test',
         'password' => bcrypt('password123'),
-        'role' => 'company_owner',
+        'role' => 'company',
     ]);
 
     $ownerToken = postJson('/api/auth/login', [

@@ -6,6 +6,8 @@ use App\Models\User;
 use App\Models\Company;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\JobCategory;
+use App\Models\JobVacancy;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -15,22 +17,22 @@ class EMSSeeder extends Seeder
     {
         // Create default admin user
         $admin = User::firstOrCreate(
-            ['email' => 'admin@ems.local'],
+            ['email' => 'admin@gmail.com'],
             [
                 'name' => 'Admin User',
-                'password' => Hash::make('Admin@123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'admin',
                 'email_verified_at' => now(),
             ]
         );
 
-        // Create company owner user
+        // Create company user (company account)
         $owner = User::firstOrCreate(
             ['email' => 'owner@acme.local'],
             [
                 'name' => 'Company Owner',
                 'password' => Hash::make('Owner@123'),
-                'role' => 'company_owner',
+                'role' => 'company',
                 'email_verified_at' => now(),
             ]
         );
@@ -43,6 +45,24 @@ class EMSSeeder extends Seeder
                 'industry' => 'Technology',
                 'website' => 'https://acme.example.com',
                 'ownerId' => $owner->id,
+            ]
+        );
+
+        $category = JobCategory::firstOrCreate(
+            ['name' => 'Backend Development']
+        );
+
+        JobVacancy::firstOrCreate(
+            [
+                'title' => 'Backend Engineer',
+                'companyId' => $company->id,
+            ],
+            [
+                'description' => 'Build and maintain EMS backend APIs.',
+                'location' => 'Remote',
+                'salary' => '120000',
+                'type' => 'full-time',
+                'categoryId' => $category->id,
             ]
         );
 
@@ -111,9 +131,9 @@ class EMSSeeder extends Seeder
         $employee = User::firstOrCreate(
             ['email' => 'employee@acme.local'],
             [
-                'name' => 'John Employee',
-                'password' => Hash::make('Employee@123'),
-                'role' => 'job_seeker',
+                'name' => 'Employee User',
+                'password' => Hash::make('12345678'),
+                'role' => 'employee',
                 'email_verified_at' => now(),
             ]
         );

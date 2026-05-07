@@ -13,7 +13,7 @@ it('supports company, department, and employee lifecycle endpoints', function ()
         'name' => 'Owner',
         'email' => 'owner-flow@example.test',
         'password' => bcrypt('password123'),
-        'role' => 'company_owner',
+        'role' => 'company',
     ]);
 
     $token = postJson('/api/auth/login', [

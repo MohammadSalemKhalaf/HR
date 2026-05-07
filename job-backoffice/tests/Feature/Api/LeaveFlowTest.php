@@ -13,7 +13,7 @@ it('creates, approves, rejects, and lists employee leaves', function () {
         'name' => 'Leave Owner',
         'email' => 'leave-owner@example.test',
         'password' => bcrypt('password123'),
-        'role' => 'company_owner',
+        'role' => 'company',
     ]);
 
     $ownerToken = postJson('/api/auth/login', [

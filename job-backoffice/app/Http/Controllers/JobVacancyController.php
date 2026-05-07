@@ -22,8 +22,8 @@ public function index(Request $request)
 {
     $query = JobVacancy::with(['company', 'jobcategory']);
 
-    // إذا Company Owner → اعرض بس وظائف شركته
-    if (Auth::user()->role === 'company_owner') {
+    // If user is linked to a company → show only their company's jobs
+    if (Auth::user()->company || \App\Models\Company::where('ownerId', Auth::id())->exists()) {
         $query->whereHas('company', function ($q) {
             $q->where('ownerId', Auth::id());
         });

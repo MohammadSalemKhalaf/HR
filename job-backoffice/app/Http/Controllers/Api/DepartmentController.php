@@ -23,8 +23,16 @@ class DepartmentController extends BaseApiController
 
     public function store(Request $request): JsonResponse
     {
+        $resolvedCompanyId = $request->string('company_id')->toString();
+
+        if ($resolvedCompanyId === '') {
+            $user = $request->user();
+            if ($user) {
+                $resolvedCompanyId = (string) $this->companyIdForUser($user);
+            }
+        }
+
         $validator = Validator::make($request->all(), [
-            'company_id' => ['required', 'exists:companies,id'],
             'name' => ['required', 'string', 'max:255'],
             'code' => ['nullable', 'string', 'max:255'],
             'manager_employee_id' => ['nullable', 'exists:employees,id'],
@@ -34,8 +42,12 @@ class DepartmentController extends BaseApiController
             return $this->error('Validation failed.', $validator->errors(), 422);
         }
 
+        if ($resolvedCompanyId === '') {
+            return $this->error('Validation failed.', ['company_id' => ['Company could not be resolved from token.']], 422);
+        }
+
         $department = Department::create([
-            'company_id' => $request->string('company_id'),
+            'company_id' => $resolvedCompanyId,
             'name' => $request->input('name'),
             'code' => $request->input('code'),
             'manager_employee_id' => $request->input('manager_employee_id'),

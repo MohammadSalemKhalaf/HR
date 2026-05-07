@@ -29,14 +29,14 @@ it('registers and logs in core roles with token payloads', function (string $rol
     $login->assertOk()
         ->assertJsonPath('success', true)
         ->assertJsonPath('data.role', $role);
-})->with(['admin', 'company_owner', 'job_seeker']);
+})->with(['admin', 'company', 'job_seeker']);
 
 it('logs in an employee using the derived employee role', function () {
     $owner = User::create([
         'name' => 'Owner',
         'email' => 'owner@example.test',
         'password' => bcrypt('password123'),
-        'role' => 'company_owner',
+        'role' => 'company',
     ]);
 
     $company = Company::create([

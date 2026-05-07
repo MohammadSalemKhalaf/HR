@@ -51,7 +51,7 @@ class DatabaseSeeder extends Seeder
         ],[
             'name'=> fake()->name(),
             'password'=> Hash::make('12345678'),
-            'role'=>'company_owner',
+            'role'=>'company',
             'email_verified_at'=>now()
 
         ]);

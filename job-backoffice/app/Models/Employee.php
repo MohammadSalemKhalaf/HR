@@ -8,6 +8,19 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Class Employee
+ *
+ * @property string $id
+ * @property string|null $user_id
+ * @property string|null $company_id
+ * @property string|null $department_id
+ * @property string|null $employee_number
+ * @property string|null $job_title
+ * @property \Illuminate\Support\Carbon|null $hired_at
+ * @property string|null $status
+ * @property string|null $manager_id
+ */
 class Employee extends Model
 {
     use HasFactory, HasUuids;
