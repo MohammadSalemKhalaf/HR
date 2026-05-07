@@ -29,8 +29,7 @@ class HelperController extends BaseApiController
     {
         $validator = Validator::make($request->all(), [
             'user_id' => ['required', 'exists:users,id'],
-            'filename' => ['nullable', 'string', 'max:255'],
-            'file_url' => ['nullable', 'string', 'max:255'],
+            'cv_file' => ['required', 'file', 'mimes:pdf,doc,docx', 'max:5120'],
             'contact_details' => ['nullable', 'string'],
             'education' => ['nullable', 'string'],
             'experience' => ['nullable', 'string'],
@@ -42,10 +41,16 @@ class HelperController extends BaseApiController
             return $this->error('Validation failed.', $validator->errors(), 422);
         }
 
+        // store uploaded file
+        $file = $request->file('cv_file');
+        $filename = $request->string('user_id').'-'.now()->timestamp.'.'.$file->getClientOriginalExtension();
+        $path = $file->storeAs('public/resumes', $filename);
+        $fileUrl = '/storage/resumes/'.$filename;
+
         $resume = Resume::create([
             'userId' => $request->string('user_id'),
-            'filename' => $request->input('filename', 'resume-'.$request->string('user_id').'.pdf'),
-            'fileUrl' => $request->input('file_url', '/storage/resumes/resume-'.$request->string('user_id').'.pdf'),
+            'filename' => $file->getClientOriginalName(),
+            'fileUrl' => $fileUrl,
             'contactDetails' => $request->input('contact_details', 'N/A'),
             'education' => $request->input('education', 'N/A'),
             'experience' => $request->input('experience', 'N/A'),

@@ -172,6 +172,7 @@
         },
         {
           "name": "Apply To Vacancy",
+          "description": "Apply to a job vacancy. Supply EITHER resume_id (for existing resume) OR cv_file (to upload new resume). Do not supply both.",
           "request": {
             "method": "POST",
             "header": [
@@ -180,18 +181,25 @@
               "mode": "formdata",
               "formdata": [
                 {
-                  "key": "job_vacancy_id",
-                  "value": "{{vacancy_id}}",
-                  "type": "text"
-                },
-                {
                   "key": "user_id",
                   "value": "{{seeker_user_id}}",
                   "type": "text"
                 },
                 {
-                  "key": "cv",
+                  "key": "job_vacancy_id",
+                  "value": "{{vacancy_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "resume_id",
+                  "value": "{{resume_id}}",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "cv_file",
                   "type": "file",
+                  "disabled": true,
                   "src": []
                 }
               ]
