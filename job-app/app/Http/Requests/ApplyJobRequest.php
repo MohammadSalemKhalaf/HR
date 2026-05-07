@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ApplyJobRequest extends FormRequest
 {
@@ -22,7 +23,13 @@ class ApplyJobRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'resume_id'    => 'nullable|exists:resumes,id',
+            'resume_id'    => [
+                'nullable',
+                Rule::exists('resumes', 'id')->where(function ($query) {
+                    $query->whereNotNull('fileUrl')
+                          ->where('fileUrl', 'not like', '%auto-generated%');
+                }),
+            ],
             'resume_file'  => 'required_without:resume_id|file|mimes:pdf,doc,docx|max:5120',
             'cover_letter' => 'nullable|string|max:2000',
         ];
