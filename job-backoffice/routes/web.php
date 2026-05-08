@@ -10,7 +10,9 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EmployeeViewController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 
 
     // Route::get('/', [AuthenticatedSessionController::class, 'create'])->name('create');
@@ -20,13 +22,16 @@ Route::view('/', 'welcome');
 Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', function () {
-        $role = auth()->user()->role;
+        $user = Auth::user();
+        if (!$user instanceof User) {
+            abort(403);
+        }
 
-        if ($role === 'company') {
+        if ($user->hasRole(['company', 'manager', 'job_seeker'])) {
             return app(DashboardController::class)->index();
         }
 
-        if ($role === 'employee') {
+        if ($user->hasRole('employee')) {
             return redirect()->route('employee.dashboard');
         }
 
@@ -35,12 +40,14 @@ Route::middleware('auth')->group(function () {
 
     Route::view('/employee/dashboard', 'employee.dashboard')->name('employee.dashboard');
 
-    Route::middleware('role:admin,company')->group(function () {
+    Route::middleware('role:admin,company,manager')->group(function () {
         Route::resource('job-applications', JobApplicationController::class);
         Route::put('job-applications/{id}/restore', [JobApplicationController::class, 'restore'])->name('job-applications.restore');
         Route::resource('job-vacancies', JobVacancyController::class);
         Route::put('job-vacancies/{id}/restore', [JobVacancyController::class, 'restore'])->name('job-vacancies.restore');
-        
+    });
+
+    Route::middleware('role:admin,company')->group(function () {
         // Employee web views
         Route::get('employees/list', [EmployeeViewController::class, 'index'])->name('employees.list');
         Route::get('employees/{id}/view', [EmployeeViewController::class, 'show'])->name('employees.view');

@@ -18,12 +18,14 @@ class RoleMiddleware
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
         if (Auth::check()) {
-            $role = Auth::user()->role;
-            $hasAccess = in_array($role, $roles);
-            if (! $hasAccess) {
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+
+            if (! $user->hasRole($roles)) {
                 abort(403);
             }
         }
+
         return $next($request);
     }
 }

@@ -7,7 +7,9 @@ use App\Models\JobCategory;
 use App\Models\JobVacancy;
 use App\Models\Resume;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use function Pest\Laravel\getJson;
+use function Pest\Laravel\post;
 use function Pest\Laravel\postJson;
 
 it('converts an accepted application into an employee automatically', function () {
@@ -54,16 +56,15 @@ it('converts an accepted application into an employee automatically', function (
         'password' => 'password123',
     ])->json('data.token');
 
-    $resume = postJson('/api/helpers/resumes', [
+    $resume = post('/api/helpers/resumes', [
             'user_id' => $jobSeeker->id,
-            'filename' => 'candidate-resume.pdf',
-            'file_url' => '/storage/resumes/candidate-resume.pdf',
+            'cv_file' => UploadedFile::fake()->create('candidate-resume.pdf', 120, 'application/pdf'),
             'contact_details' => 'candidate@example.test',
             'education' => 'BS Computer Science',
             'experience' => '3 years PHP',
             'skills' => 'Laravel, PHP',
             'summary' => 'Candidate summary',
-        ], ['Authorization' => 'Bearer '.$jobSeekerToken])
+        ], ['Authorization' => 'Bearer '.$jobSeekerToken, 'Accept' => 'application/json'])
         ->assertCreated()
         ->json('data');
 

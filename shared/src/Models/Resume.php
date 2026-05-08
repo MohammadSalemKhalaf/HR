@@ -5,13 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-
 
 class Resume extends Model
-
 {
     use HasFactory, Notifiable,HasUuids,SoftDeletes;
 
@@ -41,12 +39,8 @@ class Resume extends Model
         ];
     }
 
-    public function user(){
-        return $this->belongsTo(User::class,'userId','id');
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'userId', 'id');
     }
-
-
-
-
-
 }

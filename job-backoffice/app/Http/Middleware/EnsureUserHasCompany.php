@@ -20,7 +20,7 @@ class EnsureUserHasCompany
             abort(401);
         }
 
-        if (! $user->company && ! \App\Models\Company::where('ownerId', Auth::id())->exists()) {
+        if (! $user->company && ! $user->employee && ! \App\Models\Company::where('ownerId', Auth::id())->exists()) {
             abort(403);
         }
 

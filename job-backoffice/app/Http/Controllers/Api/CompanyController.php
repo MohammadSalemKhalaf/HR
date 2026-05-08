@@ -40,17 +40,30 @@ class CompanyController extends BaseApiController
         }
 
         $company = DB::transaction(function () use ($request) {
+            $companyRoleId = User::roleIdFor('company');
             $user = null;
 
             if ($request->filled('owner_id')) {
                 $user = User::findOrFail($request->input('owner_id'));
+                DB::table('users')
+                    ->where('id', $user->id)
+                    ->update([
+                        'role_id' => $companyRoleId,
+                        'role' => 'job_seeker',
+                    ]);
             } elseif ($request->filled('email') && $request->filled('password')) {
                 $user = User::create([
                     'name' => $request->input('name'),
                     'email' => $request->input('email'),
                     'password' => Hash::make($request->input('password')),
-                    'role' => 'company',
                 ]);
+
+                DB::table('users')
+                    ->where('id', $user->id)
+                    ->update([
+                        'role_id' => $companyRoleId,
+                        'role' => 'job_seeker',
+                    ]);
             } else {
                 $user = $request->user();
             }

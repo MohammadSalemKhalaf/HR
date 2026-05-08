@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 use App\Models\JobVacancy;
 use App\Models\JobApplication;
 use App\Models\Resume;
@@ -27,7 +29,10 @@ class JobVacancyController extends Controller
     public function apply($id)
     {
         $job = JobVacancy::findOrFail($id);
-        $user = auth()->user();
+        $user = Auth::user();
+        if (!$user instanceof User) {
+            abort(403);
+        }
         return view('job.apply', compact('job', 'user'));
     }
 
@@ -35,7 +40,10 @@ class JobVacancyController extends Controller
     public function storeApplication(ApplyJobRequest $request, $id)
     {
         $job  = JobVacancy::findOrFail($id);
-        $user = auth()->user();
+        $user = Auth::user();
+        if (!$user instanceof User) {
+            abort(403);
+        }
 
         $request->validated();
 

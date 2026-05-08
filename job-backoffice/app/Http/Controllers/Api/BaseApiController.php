@@ -36,15 +36,21 @@ class BaseApiController extends Controller
 
     protected function effectiveRole(User $user): string
     {
+        $role = $user->roleSlug();
+
+        if ($role && $role !== 'job_seeker') {
+            return $role;
+        }
+
         if (! Schema::hasTable('employees')) {
-            return $user->role === 'company_owner' ? 'company' : $user->role;
+            return $role ?? 'job_seeker';
         }
 
         if (Employee::where('user_id', $user->id)->exists()) {
             return 'employee';
         }
 
-        return $user->role === 'company_owner' ? 'company' : $user->role;
+        return $role ?? 'job_seeker';
     }
 
     protected function companyIdForUser(User $user): ?string

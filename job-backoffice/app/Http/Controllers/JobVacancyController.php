@@ -21,11 +21,14 @@ class JobVacancyController extends Controller
 public function index(Request $request)
 {
     $query = JobVacancy::with(['company', 'jobcategory']);
+    /** @var \App\Models\User $user */
+    $user = Auth::user();
+    $companyId = $user->company?->id ?? $user->employee?->company_id;
 
     // If user is linked to a company → show only their company's jobs
-    if (Auth::user()->company || \App\Models\Company::where('ownerId', Auth::id())->exists()) {
-        $query->whereHas('company', function ($q) {
-            $q->where('ownerId', Auth::id());
+    if ($companyId) {
+        $query->whereHas('company', function ($q) use ($companyId) {
+            $q->where('id', $companyId);
         });
     }
 
@@ -56,7 +59,7 @@ public function create()
      */
   public function store(JobVacancyCreateRequest $request)
 {
-    
+
     JobVacancy::create($request->validated());
 
     return redirect()

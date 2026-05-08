@@ -21,7 +21,7 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
-            'role' => 'job_seeker',
+            'role_id' => User::roleIdFor('job_seeker'),
         ];
     }
 

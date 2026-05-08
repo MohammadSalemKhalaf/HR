@@ -21,10 +21,11 @@ class EMSSeeder extends Seeder
             [
                 'name' => 'Admin User',
                 'password' => Hash::make('12345678'),
-                'role' => 'admin',
+                'role_id' => User::roleIdFor('admin'),
                 'email_verified_at' => now(),
             ]
         );
+        $admin->forceFill(['role_id' => User::roleIdFor('admin')])->save();
 
         // Create company user (company account)
         $owner = User::firstOrCreate(
@@ -32,10 +33,11 @@ class EMSSeeder extends Seeder
             [
                 'name' => 'Company Owner',
                 'password' => Hash::make('Owner@123'),
-                'role' => 'company',
+                'role_id' => User::roleIdFor('company'),
                 'email_verified_at' => now(),
             ]
         );
+        $owner->forceFill(['role_id' => User::roleIdFor('company')])->save();
 
         // Create company
         $company = Company::firstOrCreate(
@@ -72,10 +74,11 @@ class EMSSeeder extends Seeder
             [
                 'name' => 'HR Manager',
                 'password' => Hash::make('HR@123'),
-                'role' => 'job_seeker', // Using job_seeker as a placeholder; actual role can be customized
+                'role_id' => User::roleIdFor('manager'),
                 'email_verified_at' => now(),
             ]
         );
+        $hr->forceFill(['role_id' => User::roleIdFor('manager')])->save();
 
         // Create HR Employee record
         $hrEmployee = Employee::firstOrCreate(
@@ -106,10 +109,11 @@ class EMSSeeder extends Seeder
             [
                 'name' => 'Engineering Manager',
                 'password' => Hash::make('Manager@123'),
-                'role' => 'job_seeker',
+                'role_id' => User::roleIdFor('manager'),
                 'email_verified_at' => now(),
             ]
         );
+        $manager->forceFill(['role_id' => User::roleIdFor('manager')])->save();
 
         // Create manager Employee record
         $managerEmployee = Employee::firstOrCreate(
@@ -133,10 +137,11 @@ class EMSSeeder extends Seeder
             [
                 'name' => 'Employee User',
                 'password' => Hash::make('12345678'),
-                'role' => 'employee',
+                'role_id' => User::roleIdFor('employee'),
                 'email_verified_at' => now(),
             ]
         );
+        $employee->forceFill(['role_id' => User::roleIdFor('employee')])->save();
 
         // Create employee record
         Employee::firstOrCreate(
@@ -158,9 +163,10 @@ class EMSSeeder extends Seeder
             [
                 'name' => 'Job Seeker',
                 'password' => Hash::make('Seeker@123'),
-                'role' => 'job_seeker',
+                'role_id' => User::roleIdFor('job_seeker'),
                 'email_verified_at' => now(),
             ]
         );
+        $seeker->forceFill(['role_id' => User::roleIdFor('job_seeker')])->save();
     }
 }

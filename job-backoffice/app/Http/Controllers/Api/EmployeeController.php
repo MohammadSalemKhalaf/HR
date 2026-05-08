@@ -53,15 +53,15 @@ class EmployeeController extends BaseApiController
 
             if ($request->filled('user_id')) {
                 $user = User::findOrFail($request->string('user_id'));
-                if ($user->role !== 'employee') {
-                    $user->forceFill(['role' => 'employee'])->save();
+                if (! $user->hasRole('employee')) {
+                    $user->forceFill(['role_id' => User::roleIdFor('employee')])->save();
                 }
             } else {
                 $user = User::create([
                     'name' => $request->string('name'),
                     'email' => $request->string('email'),
                     'password' => Hash::make($request->string('password')),
-                    'role' => 'employee',
+                    'role_id' => User::roleIdFor('employee'),
                 ]);
             }
 

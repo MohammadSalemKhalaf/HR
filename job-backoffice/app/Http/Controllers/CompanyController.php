@@ -42,11 +42,7 @@ public function index(Request $request)
 
 public function show(?string $id = null)
 {
-    if ($id) {
-        $company = Company::findOrFail($id);
-    } else {
-        $company = Company::where('ownerId', Auth::id())->firstOrFail();
-    }
+    $company = $id ? Company::findOrFail($id) : $this->resolveAuthenticatedCompany();
 
     return view('company.show', compact('company'));
 }
@@ -64,10 +60,11 @@ public function store(CompanyCreateRequest $request)
             [
                 'name' => $ownerName,
                 'password' => Hash::make($ownerPassword),
-                'role' => 'company',
+                'role_id' => User::roleIdFor('company'),
                 'email_verified_at' => now(),
             ]
         );
+        $user->forceFill(['role_id' => User::roleIdFor('company')])->save();
 
         Company::create([
             'name' => $request->name,
@@ -88,8 +85,7 @@ public function store(CompanyCreateRequest $request)
         // admin
         $company = Company::findOrFail($id);
     } else {
-        // company owner
-        $company = Company::where('ownerId', Auth::user()->id)->firstOrFail();
+        $company = $this->resolveAuthenticatedCompany();
     }
 
     $owners = User::all();
@@ -101,11 +97,14 @@ public function update(CompanyUpdateRequest $request, ?string $id = null)
 {
     $company = $id
         ? Company::findOrFail($id) // admin
-        : Auth::user()->company; // owner
+        : $this->resolveAuthenticatedCompany();
 
     $company->update($request->validated());
 
-    if (Auth::user()->role === 'admin') {
+    /** @var \App\Models\User $user */
+    $user = Auth::user();
+
+    if ($user->hasRole('admin')) {
         return redirect()
             ->route('companies.show', $company->id)
             ->with('success', 'Company updated successfully');
@@ -134,5 +133,21 @@ public function update(CompanyUpdateRequest $request, ?string $id = null)
         return redirect()
             ->route('companies.index')
             ->with('success', 'Company restored successfully');
+    }
+
+    private function resolveAuthenticatedCompany(): Company
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if ($user?->company) {
+            return $user->company;
+        }
+
+        if ($user?->employee?->company) {
+            return $user->employee->company;
+        }
+
+        return Company::where('ownerId', $user->id)->firstOrFail();
     }
 }

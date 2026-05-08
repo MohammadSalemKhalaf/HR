@@ -21,7 +21,7 @@ class AuthController extends BaseApiController
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
             'password' => ['required', 'string', 'min:8'],
-            'role' => ['required', Rule::in(['admin', 'company', 'employee', 'job_seeker'])],
+            'role' => ['required', Rule::in(['admin', 'company', 'manager', 'employee', 'job_seeker', 'company_owner'])],
         ]);
 
         if ($validator->fails()) {
@@ -32,7 +32,7 @@ class AuthController extends BaseApiController
             'name' => $request->string('name'),
             'email' => $request->string('email'),
             'password' => Hash::make($request->string('password')),
-            'role' => $request->string('role'),
+            'role_id' => User::roleIdFor($request->string('role')),
         ]);
 
         return $this->success('User registered successfully.', $this->authPayload($user, $tokens), 201);
@@ -75,7 +75,7 @@ class AuthController extends BaseApiController
             return $this->error('Invalid credentials.', [], 401);
         }
 
-        if ($user->role !== 'employee') {
+        if (! $user->hasRole('employee') && ! ($user->roleSlug() === 'job_seeker' && $user->employee)) {
             return $this->error('Not an employee account.', [], 403);
         }
 
@@ -110,7 +110,7 @@ class AuthController extends BaseApiController
             return $this->error('Invalid credentials.', [], 401);
         }
 
-        if (! in_array($user->role, ['company', 'company_owner'], true)) {
+        if (! $user->hasRole(['company', 'manager'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Not a company account',
