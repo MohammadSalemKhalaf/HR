@@ -55,6 +55,9 @@
                         <x-nav-link :href="route('manager.leaves.index')" :active="request()->routeIs('manager.leaves.*')">
                             Leave Requests
                         </x-nav-link>
+                        <x-nav-link :href="route('manager.tasks.index')" :active="request()->routeIs('manager.tasks.*')">
+                            Tasks
+                        </x-nav-link>
                     </ul>
                 </div>
 
@@ -91,6 +94,9 @@
 
                         <x-nav-link :href="route('employee.leaves.index')" :active="request()->routeIs('employee.leaves.*')">
                             Leave Requests
+                        </x-nav-link>
+                        <x-nav-link :href="route('employee.tasks.index')" :active="request()->routeIs('employee.tasks.*')">
+                            My Tasks
                         </x-nav-link>
                     </ul>
                 </div>

@@ -49,4 +49,10 @@ class Leave extends Model
     {
         return $this->belongsTo(User::class, 'approved_by_user_id');
     }
+
+    // Accessor for type (alias for leave_type)
+    public function getTypeAttribute()
+    {
+        return $this->leave_type;
+    }
 }

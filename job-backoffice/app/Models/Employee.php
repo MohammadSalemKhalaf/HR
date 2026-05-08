@@ -106,4 +106,14 @@ class Employee extends Model
             ])
         );
     }
+
+    public function assignedTasks()
+    {
+        return $this->hasMany(EmployeeTask::class, 'employee_id');
+    }
+
+    public function managedTasks()
+    {
+        return $this->hasMany(EmployeeTask::class, 'manager_employee_id');
+    }
 }

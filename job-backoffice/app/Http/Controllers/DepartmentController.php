@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use App\Services\ActivityLogService;
 
 class DepartmentController extends Controller
 {
@@ -71,6 +72,9 @@ class DepartmentController extends Controller
             'code' => $validated['code'],
             'manager_employee_id' => $manager?->id,
         ]);
+
+        // Activity log
+        app(ActivityLogService::class)->log($companyId, $user->id, 'department.created', "Department created: {$department->name}", $department, ['code' => $department->code]);
 
         return redirect()->route('departments.show', $department->id)->with('success', 'Department created successfully.');
     }
@@ -145,6 +149,8 @@ class DepartmentController extends Controller
             'manager_employee_id' => $manager?->id,
         ]);
 
+        app(ActivityLogService::class)->log($companyId, $user->id, 'department.updated', "Department updated: {$department->name}", $department);
+
         return redirect()->route('departments.show', $department->id)->with('success', 'Department updated successfully.');
     }
 
@@ -162,6 +168,8 @@ class DepartmentController extends Controller
         }
 
         $department->delete();
+
+        app(ActivityLogService::class)->log($companyId, $user->id, 'department.deleted', "Department deleted: {$department->name}", $department);
 
         return redirect()->route('departments.index')->with('success', 'Department deleted successfully.');
     }
@@ -182,6 +190,8 @@ class DepartmentController extends Controller
         $manager = $this->resolveManagerEmployee($validated['manager_employee_id'], $companyId);
 
         $department->update(['manager_employee_id' => $manager->id]);
+
+        app(ActivityLogService::class)->log($companyId, $user->id, 'department.manager_assigned', "Manager assigned to department {$department->name}", $department, ['manager_id' => $manager->id, 'manager_name' => $manager->user?->name]);
 
         return back()->with('success', 'Manager assigned successfully.');
     }
@@ -205,6 +215,8 @@ class DepartmentController extends Controller
         }
 
         $employee->update(['department_id' => $department->id]);
+
+        app(ActivityLogService::class)->log($companyId, $user->id, 'employee.transferred', "Employee {$employee->user?->name} transferred to {$department->name}", $employee, ['department_id' => $department->id, 'department_name' => $department->name]);
 
         return back()->with('success', 'Employee transferred successfully.');
     }

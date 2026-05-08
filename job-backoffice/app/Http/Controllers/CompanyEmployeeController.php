@@ -11,11 +11,13 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use App\Services\ActivityLogService;
 
 class CompanyEmployeeController extends Controller
 {
     private function companyIdForCurrentUser(): ?string
     {
+        /** @var \App\Models\User|null $user */
         $user = Auth::user();
 
         if (!$user instanceof User) {
@@ -30,6 +32,7 @@ class CompanyEmployeeController extends Controller
     private function canAccessEmployee(Employee $employee): bool
     {
         /** @var User|null $user */
+        /** @var \App\Models\User|null $user */
         $user = Auth::user();
 
         if (!$user instanceof User) {
@@ -81,6 +84,7 @@ class CompanyEmployeeController extends Controller
 
     private function resolveAccessibleEmployee(string $employeeId): Employee
     {
+        /** @var \App\Models\User|null $user */
         $user = Auth::user();
 
         if (!$user instanceof User) {
@@ -144,6 +148,7 @@ class CompanyEmployeeController extends Controller
 
     public function store(Request $request)
     {
+        /** @var \App\Models\User|null $user */
         $user = Auth::user();
         $companyId = $user->company?->id ?? $user->employee?->company_id;
 
@@ -185,6 +190,9 @@ class CompanyEmployeeController extends Controller
             'status' => 'active',
         ], $validated['role_type']);
 
+        // Activity log
+        app(ActivityLogService::class)->log($companyId, $user?->id, 'employee.created', "Employee created: {$employee->user?->name}", $employee, ['role' => $validated['role_type']]);
+
         return redirect()->route('company-employees.index')
             ->with('success', 'Employee created successfully.');
     }
@@ -211,6 +219,8 @@ class CompanyEmployeeController extends Controller
     {
         $employee = $this->resolveAccessibleEmployee($company_employee);
         $companyId = $employee->company_id;
+
+        $previousRole = $employee->user?->roleSlug();
 
         $validated = $request->validate([
             'name' => ['nullable', 'string', 'max:255'],
@@ -242,6 +252,21 @@ class CompanyEmployeeController extends Controller
             'status' => $validated['status'] ?? null,
         ]);
 
+        // General update log
+        /** @var \App\Models\User|null $user */
+        $user = auth()->user();
+
+        app(ActivityLogService::class)->log($companyId, $user?->id, 'employee.updated', "Employee updated: {$employee->user?->name}", $employee);
+
+        // Role change detection: promotion/demotion
+        $newRole = $employee->user?->fresh()->roleSlug();
+        if ($previousRole !== $newRole) {
+            if ($newRole === 'manager') {
+                app(ActivityLogService::class)->log($companyId, $user?->id, 'employee.promoted', "Employee promoted to manager: {$employee->user?->name}", $employee, ['from' => $previousRole, 'to' => $newRole]);
+            } elseif ($newRole === 'employee') {
+                app(ActivityLogService::class)->log($companyId, $user?->id, 'employee.downgraded', "Employee downgraded to employee: {$employee->user?->name}", $employee, ['from' => $previousRole, 'to' => $newRole]);
+            }
+        }
         return redirect()->route('company-employees.show', $employee->id)
             ->with('success', 'Employee updated successfully.');
     }
@@ -259,6 +284,11 @@ class CompanyEmployeeController extends Controller
 
         $employee->update(['department_id' => $dept->id]);
 
+        /** @var \App\Models\User|null $user */
+        $user = auth()->user();
+
+        app(ActivityLogService::class)->log($companyId, $user?->id, 'employee.transferred', "Employee {$employee->user?->name} transferred to {$dept->name}", $employee, ['department_id' => $dept->id, 'department_name' => $dept->name]);
+
         return back()->with('success', 'Employee transferred successfully.');
     }
 
@@ -267,6 +297,11 @@ class CompanyEmployeeController extends Controller
         $employee = $this->resolveAccessibleEmployee($company_employee);
 
         $employee->delete();
+
+        /** @var \App\Models\User|null $user */
+        $user = auth()->user();
+
+        app(ActivityLogService::class)->log($employee->company_id, $user?->id, 'employee.deleted', "Employee archived: {$employee->user?->name}", $employee);
 
         return redirect()->route('company-employees.index')->with('success', 'Employee archived successfully.');
     }

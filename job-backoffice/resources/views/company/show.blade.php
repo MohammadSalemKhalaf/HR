@@ -125,5 +125,74 @@
                 </div>
             </div>
         </div>
+
+        <!-- Today Activity -->
+        <div class="rounded-[2rem] border border-white/70 bg-white/85 shadow-lg shadow-slate-950/5 backdrop-blur overflow-hidden">
+            <div class="border-b border-slate-200 px-6 py-4">
+                <h3 class="text-lg font-semibold text-slate-900">Today Activity</h3>
+            </div>
+
+            <div class="p-6">
+                @if(isset($activities) && $activities->count() > 0)
+                    <ul class="space-y-4">
+                        @foreach($activities as $act)
+                            <li class="flex items-start gap-4">
+                                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700">
+                                    @switch($act->action)
+                                        @case('department.created')
+                                        @case('department.updated')
+                                        @case('department.deleted')
+                                            📁
+                                            @break
+                                        @case('department.manager_assigned')
+                                            👤
+                                            @break
+                                        @case('employee.created')
+                                        @case('employee.transferred')
+                                        @case('employee.updated')
+                                            👥
+                                            @break
+                                        @case('employee.promoted')
+                                            ⭐
+                                            @break
+                                        @case('employee.downgraded')
+                                            🔻
+                                            @break
+                                        @case('leave.requested')
+                                            📅
+                                            @break
+                                        @case('leave.approved')
+                                            ✅
+                                            @break
+                                        @case('leave.rejected')
+                                            ❌
+                                            @break
+                                        @case('attendance.check_in')
+                                            ⏰
+                                            @break
+                                        @case('attendance.check_out')
+                                            🕔
+                                            @break
+                                        default
+                                            •
+                                    @endswitch
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <div class="text-sm font-semibold text-slate-900">{{ ucwords(str_replace(['.','_'], ' ', $act->action)) }}</div>
+                                            <div class="mt-1 text-sm text-slate-600">{{ $act->description ?? '-' }}</div>
+                                        </div>
+                                        <div class="text-xs text-slate-500">{{ $act->created_at->diffForHumans() }} @if($act->actor) · {{ $act->actor->name }} @endif</div>
+                                    </div>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                @else
+                    <div class="text-center text-slate-500">No recent activity.</div>
+                @endif
+            </div>
+        </div>
     </div>
 </x-app-layout>

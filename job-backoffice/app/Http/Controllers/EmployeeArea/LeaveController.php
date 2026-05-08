@@ -7,6 +7,9 @@ use App\Models\Employee;
 use App\Models\Leave;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Notification;
+use App\Services\ActivityLogService;
+use App\Notifications\LeaveRequested;
 
 class LeaveController extends Controller
 {
@@ -42,7 +45,7 @@ class LeaveController extends Controller
 
         $daysCount = now()->parse($data['start_date'])->diffInDays(now()->parse($data['end_date'])) + 1;
 
-        Leave::create([
+        $leave = Leave::create([
             'employee_id' => $employee->id,
             'leave_type' => $data['leave_type'],
             'start_date' => $data['start_date'],
@@ -51,6 +54,17 @@ class LeaveController extends Controller
             'status' => 'pending',
             'requested_by_user_id' => $user->id,
         ]);
+
+        app(ActivityLogService::class)->log($employee->company_id, $user->id, 'leave.requested', "Leave requested by {$user->name}: {$data['leave_type']} ({$data['start_date']} - {$data['end_date']})", null, ['employee_id' => $employee->id, 'days' => $daysCount]);
+
+        // Notify manager of leave request
+        try {
+            if ($employee->manager && $employee->manager->user) {
+                Notification::send($employee->manager->user, new LeaveRequested($leave));
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return Redirect::route('employee.leaves.index')->with('success', 'Leave requested.');
     }

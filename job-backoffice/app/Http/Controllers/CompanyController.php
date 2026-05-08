@@ -11,6 +11,7 @@ use App\Http\Requests\CompanyUpdateRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use App\Models\ActivityLog;
 
 
 class CompanyController extends Controller
@@ -43,8 +44,14 @@ public function index(Request $request)
 public function show(?string $id = null)
 {
     $company = $id ? Company::findOrFail($id) : $this->resolveAuthenticatedCompany();
+        // Fetch recent activity for this company
+        $activities = ActivityLog::where('company_id', $company->id)
+            ->with('actor')
+            ->latest()
+            ->limit(10)
+            ->get();
 
-    return view('company.show', compact('company'));
+        return view('company.show', compact('company', 'activities'));
 }
 
 public function store(CompanyCreateRequest $request)

@@ -8,6 +8,10 @@ use App\Models\Employee;
 use App\Models\Leave;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Notification;
+use App\Services\ActivityLogService;
+use App\Notifications\LeaveApproved;
+use App\Notifications\LeaveRejected;
 
 class LeaveController extends Controller
 {
@@ -45,6 +49,17 @@ class LeaveController extends Controller
         $leave->approved_at = now();
         $leave->save();
 
+        app(ActivityLogService::class)->log($manager->company_id ?? null, $user->id, 'leave.approved', "Leave approved for {$leave->employee->user?->name}", $leave, ['leave_id' => $leave->id]);
+
+        // Send approval notification to employee
+        try {
+            if ($leave->employee->user) {
+                Notification::send($leave->employee->user, new LeaveApproved($leave));
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         return Redirect::back()->with('success', 'Leave approved.');
     }
 
@@ -64,6 +79,17 @@ class LeaveController extends Controller
         $leave->approved_by_user_id = $user->id;
         $leave->approved_at = now();
         $leave->save();
+
+        app(ActivityLogService::class)->log($manager->company_id ?? null, $user->id, 'leave.rejected', "Leave rejected for {$leave->employee->user?->name}", $leave, ['leave_id' => $leave->id]);
+
+        // Send rejection notification to employee
+        try {
+            if ($leave->employee->user) {
+                Notification::send($leave->employee->user, new LeaveRejected($leave));
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return Redirect::back()->with('success', 'Leave rejected.');
     }
