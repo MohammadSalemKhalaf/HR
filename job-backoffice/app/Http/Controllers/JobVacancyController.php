@@ -60,7 +60,19 @@ public function create()
   public function store(JobVacancyCreateRequest $request)
 {
 
-    JobVacancy::create($request->validated());
+    $data = $request->validated();
+
+    /** @var \App\Models\User $user */
+    $user = Auth::user();
+
+    // If the authenticated user is a company (or linked to one), force the vacancy to use that company
+    $resolvedCompanyId = $user->company?->id ?? $user->employee?->company_id;
+
+    if ($user && $user->hasRole('company') && $resolvedCompanyId) {
+        $data['companyId'] = $resolvedCompanyId;
+    }
+
+    JobVacancy::create($data);
 
     return redirect()
         ->route('job-vacancies.index')

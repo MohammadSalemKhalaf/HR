@@ -48,6 +48,7 @@
                         @error('type')<p class="mt-2 text-sm text-rose-600">{{ $message }}</p>@enderror
                     </div>
 
+                    @unless(auth()->user()?->hasRole('company'))
                     <div>
                         <label class="mb-2 block text-sm font-semibold text-slate-700">Company *</label>
                         <select name="companyId" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100">
@@ -58,6 +59,7 @@
                         </select>
                         @error('companyId')<p class="mt-2 text-sm text-rose-600">{{ $message }}</p>@enderror
                     </div>
+                    @endunless
 
                     <div>
                         <label class="mb-2 block text-sm font-semibold text-slate-700">Category *</label>

@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -26,10 +27,10 @@ class CompanyController extends BaseApiController
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', Rule::unique('companies', 'name')],
             'address' => ['required', 'string', 'max:255'],
             'industry' => ['required', 'string', 'max:255'],
-            'website' => ['nullable', 'string', 'max:255'],
+            'website' => ['nullable', 'string', 'max:255', Rule::unique('companies', 'website')],
             'owner_id' => ['nullable', 'exists:users,id'],
             'email' => ['nullable', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['nullable', 'string', 'min:8'],
@@ -88,11 +89,13 @@ class CompanyController extends BaseApiController
             return $this->notFound('Company not found.');
         }
 
+        $company = Company::find($id);
+
         $validator = Validator::make($request->all(), [
-            'name' => ['sometimes', 'string', 'max:255'],
+            'name' => ['sometimes', 'string', 'max:255', Rule::unique('companies', 'name')->ignore($company?->id)],
             'address' => ['sometimes', 'string', 'max:255'],
             'industry' => ['sometimes', 'string', 'max:255'],
-            'website' => ['nullable', 'string', 'max:255'],
+            'website' => ['nullable', 'string', 'max:255', Rule::unique('companies', 'website')->ignore($company?->id)],
             'owner_id' => ['sometimes', 'nullable', 'exists:users,id'],
         ]);
 
