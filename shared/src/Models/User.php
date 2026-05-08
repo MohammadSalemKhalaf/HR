@@ -45,7 +45,6 @@ class User extends Authenticatable
         'last_login_at',
         'password',
         'role_id',
-        'role',
     ];
     protected $dates = [
         'deleted_at',
@@ -80,30 +79,45 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class, 'role_id');
     }
 
+    /**
+     * Get the role attribute.
+     * Reads from role_id and roles table relationship (source of truth).
+     * Never reads from the legacy 'role' column anymore.
+     *
+     * @return string|null
+     */
     public function getRoleAttribute(): ?string
     {
-        return Role::normalizeSlug($this->assignedRole?->slug ?? $this->attributes['role'] ?? null);
+        return Role::normalizeSlug($this->assignedRole?->slug ?? null);
     }
 
+    /**
+     * DEPRECATED - Maintained for backward compatibility during migration.
+     * Setting role as a string converts it to role_id.
+     * Use role_id directly instead.
+     *
+     * @param mixed $value
+     * @return void
+     */
     public function setRoleAttribute($value): void
     {
-        $normalizedRole = Role::normalizeSlug($value);
-
-        $this->attributes['role'] = $normalizedRole;
-        $this->attributes['role_id'] = $normalizedRole ? Role::idForSlug($normalizedRole) : null;
+        // Convert string role to role_id for backward compatibility
+        if (is_string($value)) {
+            $normalizedSlug = Role::normalizeSlug($value);
+            if ($normalizedSlug) {
+                $this->attributes['role_id'] = Role::idForSlug($normalizedSlug);
+            }
+        }
     }
 
     public function setRoleIdAttribute($value): void
     {
         $this->attributes['role_id'] = $value;
-
-        if ($value) {
-            $role = Role::query()->find($value);
-
-            if ($role) {
-                $this->attributes['role'] = $role->slug;
-            }
-        }
+        
+        // Do NOT write to legacy 'role' column during role_id updates.
+        // The getter (getRoleAttribute) handles reading from role_id first.
+        // Skipping the write prevents truncation errors when legacy column
+        // has different enum constraints or stale/invalid values.
     }
 
     public function hasRole(string|array $roles): bool
@@ -117,6 +131,11 @@ class User extends Authenticatable
     public function roleSlug(): ?string
     {
         return $this->getRoleAttribute();
+    }
+
+    public function roleName(): ?string
+    {
+        return $this->assignedRole?->name;
     }
     
      public function resumes(): HasMany

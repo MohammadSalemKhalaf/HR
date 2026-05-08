@@ -49,7 +49,7 @@
                         <tr class="hover:bg-slate-50">
                             <td class="px-6 py-4 font-medium text-slate-900">{{ $user->name }}</td>
                             <td class="px-6 py-4 text-slate-600">{{ $user->email }}</td>
-                            <td class="px-6 py-4 text-slate-600">{{ $user->role }}</td>
+                            <td class="px-6 py-4 text-slate-600">{{ $user->roleName() }}</td>
                             <td class="px-6 py-4 text-right">
                                 <div class="flex items-center justify-end gap-3">
                                     @if(request('archived') == 'true')

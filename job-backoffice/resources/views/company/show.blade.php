@@ -8,9 +8,9 @@
             </div>
 
             <div class="flex flex-wrap gap-3">
-                <a href="{{ auth()->user()->role === 'admin' ? route('companies.edit', $company->id) : route('my-company.edit') }}" class="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">Edit</a>
+                <a href="{{ auth()->user()->hasRole('admin') ? route('companies.edit', $company->id) : route('my-company.edit') }}" class="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">Edit</a>
 
-                @if(auth()->user()->role === 'admin')
+                @if(auth()->user()->hasRole('admin'))
                     <form action="{{ route('companies.destroy', $company->id) }}" method="POST" onsubmit="return confirm('Archive this company?')">
                         @csrf
                         @method('DELETE')

@@ -1,5 +1,5 @@
 @php
-if(auth()->user()->role == 'admin') {
+if(auth()->user()->hasRole('admin')) {
     $formAction = route('companies.update', $company->id);
 } else {
     $formAction = route('my-company.update');
@@ -15,7 +15,7 @@ if(auth()->user()->role == 'admin') {
             <p class="mt-2 text-sm text-slate-600">Update company information below.</p>
         </div>
 
-        <a href="{{ auth()->user()->role === 'admin' ? route('companies.show', $company->id) : route('my-company.show') }}" class="inline-flex items-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+        <a href="{{ auth()->user()->hasRole('admin') ? route('companies.show', $company->id) : route('my-company.show') }}" class="inline-flex items-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
             Back
         </a>
     </div>
@@ -70,7 +70,7 @@ if(auth()->user()->role == 'admin') {
         </div>
 
         <div class="flex flex-wrap justify-end gap-3 border-t border-slate-200 pt-6">
-            <a href="{{ auth()->user()->role === 'admin' ? route('companies.show', $company->id) : route('my-company.show') }}" class="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+            <a href="{{ auth()->user()->hasRole('admin') ? route('companies.show', $company->id) : route('my-company.show') }}" class="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
                 Cancel
             </a>
 

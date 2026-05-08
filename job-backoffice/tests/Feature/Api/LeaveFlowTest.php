@@ -13,7 +13,7 @@ it('creates, approves, rejects, and lists employee leaves', function () {
         'name' => 'Leave Owner',
         'email' => 'leave-owner@example.test',
         'password' => bcrypt('password123'),
-        'role' => 'company',
+        'role_id' => User::roleIdFor('company'),
     ]);
 
     $ownerToken = postJson('/api/auth/login', [
@@ -39,7 +39,7 @@ it('creates, approves, rejects, and lists employee leaves', function () {
         'name' => 'Employee Leave',
         'email' => 'employee-leave@example.test',
         'password' => bcrypt('password123'),
-        'role' => 'job_seeker',
+        'role_id' => User::roleIdFor('job_seeker'),
     ]);
 
     $employee = Employee::create([

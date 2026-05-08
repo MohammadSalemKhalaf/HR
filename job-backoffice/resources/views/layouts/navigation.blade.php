@@ -1,5 +1,5 @@
 @php
-    $isAdmin = auth()->user()->role === 'admin';
+    $isAdmin = auth()->user()->hasRole('admin');
     $hasCompany = (bool) auth()->user()->company;
 @endphp
 
@@ -20,7 +20,7 @@
         <div class="mb-6 rounded-2xl border border-white/10 bg-white/5 p-4">
             <div class="text-xs uppercase tracking-[0.25em] text-slate-400">Signed in</div>
             <div class="mt-2 text-sm font-semibold text-white">{{ auth()->user()->name }}</div>
-            <div class="text-xs text-slate-400">Role: {{ auth()->user()->role }}</div>
+            <div class="text-xs text-slate-400">Role: {{ auth()->user()->roleName() }}</div>
         </div>
 
         <div class="space-y-6">

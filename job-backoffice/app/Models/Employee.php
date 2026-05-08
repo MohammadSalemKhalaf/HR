@@ -75,4 +75,30 @@ class Employee extends Model
     {
         return $this->hasMany(AttendanceRecord::class, 'employee_id');
     }
+
+    /**
+     * Safely convert/update a user to employee status.
+     * Handles both scenarios:
+     * - Scenario A: Same user applying to multiple jobs in same/different company -> updates existing employee
+     * - Scenario B: Existing employee transitioning to another company -> updates company_id while preserving user/employee
+     *
+     * Idempotent: Multiple calls with same user result in single employee record, no duplicates.
+     *
+     * @param User $user The user to convert to employee
+     * @param array $attributes Employee attributes (company_id, department_id, job_title, etc)
+     * @param string $roleSlug Role to assign (default: 'employee')
+     * @return self
+     */
+    public static function syncForUser(User $user, array $attributes, string $roleSlug = 'employee'): self
+    {
+        $user->forceFill(['role_id' => User::roleIdFor($roleSlug)])->save();
+
+        return static::updateOrCreate(
+            ['user_id' => $user->id],
+            array_merge($attributes, [
+                'status' => $attributes['status'] ?? 'active',
+                'hired_at' => $attributes['hired_at'] ?? now(),
+            ])
+        );
+    }
 }

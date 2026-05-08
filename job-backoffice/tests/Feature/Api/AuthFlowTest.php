@@ -36,7 +36,7 @@ it('logs in an employee using the derived employee role', function () {
         'name' => 'Owner',
         'email' => 'owner@example.test',
         'password' => bcrypt('password123'),
-        'role' => 'company',
+        'role_id' => User::roleIdFor('company'),
     ]);
 
     $company = Company::create([
@@ -51,7 +51,7 @@ it('logs in an employee using the derived employee role', function () {
         'name' => 'Employee',
         'email' => 'employee@example.test',
         'password' => bcrypt('password123'),
-        'role' => 'job_seeker',
+        'role_id' => User::roleIdFor('job_seeker'),
     ]);
 
     $employee = Employee::create([
@@ -75,4 +75,22 @@ it('logs in an employee using the derived employee role', function () {
         ->assertJsonPath('data.role', 'employee')
         ->assertJsonPath('data.company_id', $company->id)
         ->assertJsonPath('data.employee_id', $employee->id);
+});
+
+it('logs in a manager using the company login flow', function () {
+    $manager = User::create([
+        'name' => 'Manager',
+        'email' => 'manager-login@example.test',
+        'password' => bcrypt('password123'),
+        'role_id' => User::roleIdFor('manager'),
+    ]);
+
+    $response = postJson('/api/auth/company/login', [
+        'email' => 'manager-login@example.test',
+        'password' => 'password123',
+    ]);
+
+    $response->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.role', 'manager');
 });

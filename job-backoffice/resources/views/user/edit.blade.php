@@ -33,7 +33,7 @@
 
                     <div>
                         <label class="mb-2 block text-sm font-semibold text-slate-700">Role</label>
-                        <input type="text" value="{{ $user->role }}" class="w-full rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500" readonly>
+                        <input type="text" value="{{ $user->roleName() }}" class="w-full rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500" readonly>
                     </div>
                 </div>
 

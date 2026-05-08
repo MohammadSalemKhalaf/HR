@@ -86,7 +86,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ auth()->user()->role == 'admin' ? 7 : 6 }}" class="px-6 py-12 text-center text-slate-500">No vacancies found.</td>
+                            <td colspan="{{ auth()->user()->hasRole('admin') ? 7 : 6 }}" class="px-6 py-12 text-center text-slate-500">No vacancies found.</td>
                         </tr>
                     @endforelse
                 </tbody>

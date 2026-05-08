@@ -31,7 +31,7 @@
                     <tr>
                         <th class="px-6 py-3 text-left">Applicant Name</th>
                         <th class="px-6 py-3 text-left">Position</th>
-                        @if (auth()->user()->role == 'admin')
+                        @if (auth()->user()->hasRole('admin'))
                             <th class="px-6 py-3 text-left">Company</th>
                         @endif
                         <th class="px-6 py-3 text-left">Status</th>
@@ -46,7 +46,7 @@
                                 <a href="{{ route('job-applications.show', $application->id) }}" class="hover:text-cyan-700 hover:underline">{{ $application->user?->name ?? 'N/A' }}</a>
                             </td>
                             <td class="px-6 py-4 text-slate-600">{{ $application->jobVacancy?->title ?? 'N/A' }}</td>
-                            @if (auth()->user()->role == 'admin')
+                            @if (auth()->user()->hasRole('admin'))
                                 <td class="px-6 py-4 text-slate-600">{{ $application->jobVacancy?->company?->name ?? 'N/A' }}</td>
                             @endif
                             <td class="px-6 py-4">
@@ -75,7 +75,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ auth()->user()->role == 'admin' ? 5 : 4 }}" class="px-6 py-12 text-center text-slate-500">No job applications found.</td>
+                            <td colspan="{{ auth()->user()->hasRole('admin') ? 5 : 4 }}" class="px-6 py-12 text-center text-slate-500">No job applications found.</td>
                         </tr>
                     @endforelse
                 </tbody>

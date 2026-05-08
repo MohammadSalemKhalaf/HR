@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Employee;
 use App\Models\JobApplication;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class JobApplicationObserver
@@ -15,21 +16,21 @@ class JobApplicationObserver
         }
 
         DB::transaction(function () use ($jobApplication) {
-            if (Employee::where('user_id', $jobApplication->userId)->exists()) {
+            $jobVacancy = $jobApplication->jobvacancy()->first();
+            $user = User::find($jobApplication->userId);
+
+            if (! $user || ! $jobVacancy) {
                 return;
             }
 
-            $jobVacancy = $jobApplication->jobvacancy()->first();
-
-            Employee::create([
-                'user_id' => $jobApplication->userId,
+            Employee::syncForUser($user, [
                 'company_id' => $jobVacancy?->companyId,
                 'department_id' => null,
                 'job_title' => $jobVacancy?->title,
                 'hired_at' => now(),
                 'status' => 'active',
                 'manager_id' => null,
-            ]);
+            ], 'employee');
         });
     }
 }
