@@ -27,7 +27,7 @@ Route::middleware('auth')->group(function () {
             abort(403);
         }
 
-        if ($user->hasRole(['company', 'manager', 'job_seeker'])) {
+        if ($user->hasRole(['admin', 'company', 'manager', 'job_seeker'])) {
             return app(DashboardController::class)->index();
         }
 
