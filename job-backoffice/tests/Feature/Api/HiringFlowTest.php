@@ -81,7 +81,10 @@ it('converts an accepted application into an employee automatically', function (
         ->assertJsonPath('success', true)
         ->assertJsonPath('data.employee_exists', true);
 
+    $employee = Employee::where('user_id', $jobSeeker->id)->firstOrFail();
+
     expect(Employee::where('user_id', $jobSeeker->id)->count())->toBe(1);
+    expect((float) $employee->salary)->toBe(5000.0);
     expect(User::whereKey($jobSeeker->id)->value('role_id'))->toBe(User::roleIdFor('employee'));
 });
 

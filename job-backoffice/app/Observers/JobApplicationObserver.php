@@ -27,6 +27,7 @@ class JobApplicationObserver
                 'company_id' => $jobVacancy?->companyId,
                 'department_id' => null,
                 'job_title' => $jobVacancy?->title,
+                'salary' => $jobVacancy?->salary,
                 'hired_at' => now(),
                 'status' => 'active',
                 'manager_id' => null,

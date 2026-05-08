@@ -3,6 +3,8 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\CompanyEmployeeController;
 use App\Http\Controllers\JobApplicationController;
 use App\Http\Controllers\JobCategoryController;
 use App\Http\Controllers\JobVacancyController;
@@ -48,6 +50,12 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware('role:admin,company')->group(function () {
+        // Departments
+        Route::resource('departments', DepartmentController::class);
+
+        // Company Employees
+        Route::resource('company-employees', CompanyEmployeeController::class);
+
         // Employee web views
         Route::get('employees/list', [EmployeeViewController::class, 'index'])->name('employees.list');
         Route::get('employees/{id}/view', [EmployeeViewController::class, 'show'])->name('employees.view');

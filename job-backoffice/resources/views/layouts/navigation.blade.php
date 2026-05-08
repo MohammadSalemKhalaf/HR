@@ -48,6 +48,14 @@
                         <x-nav-link :href="route('my-company.show')" :active="request()->routeIs('my-company.*')">
                             My Company
                         </x-nav-link>
+
+                        <x-nav-link :href="route('departments.index')" :active="request()->routeIs('departments.*')">
+                            Departments
+                        </x-nav-link>
+
+                        <x-nav-link :href="route('company-employees.index')" :active="request()->routeIs('company-employees.*')">
+                            Employees
+                        </x-nav-link>
                     @endif
                 </ul>
             </div>
