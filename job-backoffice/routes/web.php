@@ -29,8 +29,12 @@ Route::middleware('auth')->group(function () {
             abort(403);
         }
 
-        if ($user->hasRole(['admin', 'company', 'manager', 'job_seeker'])) {
+        if ($user->hasRole('admin') || $user->hasRole('company') || $user->hasRole('job_seeker')) {
             return app(DashboardController::class)->index();
+        }
+
+        if ($user->hasRole('manager')) {
+            return redirect()->route('manager.dashboard');
         }
 
         if ($user->hasRole('employee')) {
@@ -66,6 +70,40 @@ Route::middleware('auth')->group(function () {
         Route::get('leaves', [EmployeeViewController::class, 'leaveIndex'])->name('leave.index');
         Route::get('leaves/create/{employeeId?}', [EmployeeViewController::class, 'leaveCreate'])->name('leave.create');
         Route::post('leaves', [EmployeeViewController::class, 'leaveStore'])->name('leave.store');
+    });
+
+    // Manager web area
+    Route::middleware(['auth','role:manager'])->prefix('manager')->name('manager.')->group(function () {
+        Route::get('dashboard', [App\Http\Controllers\Manager\DashboardController::class, 'index'])->name('dashboard');
+
+        Route::get('departments', [App\Http\Controllers\Manager\DepartmentController::class, 'index'])->name('departments.index');
+        Route::get('departments/{department}', [App\Http\Controllers\Manager\DepartmentController::class, 'show'])->name('departments.show');
+
+        Route::get('employees', [App\Http\Controllers\Manager\EmployeeController::class, 'index'])->name('employees.index');
+        Route::get('employees/{employee}', [App\Http\Controllers\Manager\EmployeeController::class, 'show'])->name('employees.show');
+
+        Route::get('attendance', [App\Http\Controllers\Manager\AttendanceController::class, 'index'])->name('attendance.index');
+
+        Route::get('leaves', [App\Http\Controllers\Manager\LeaveController::class, 'index'])->name('leaves.index');
+        Route::post('leaves/{leave}/approve', [App\Http\Controllers\Manager\LeaveController::class, 'approve'])->name('leaves.approve');
+        Route::post('leaves/{leave}/reject', [App\Http\Controllers\Manager\LeaveController::class, 'reject'])->name('leaves.reject');
+    });
+
+    // Employee web area
+    Route::middleware(['auth','role:employee'])->prefix('employee')->name('employee.')->group(function () {
+        Route::get('dashboard', [App\Http\Controllers\EmployeeArea\DashboardController::class, 'index'])->name('dashboard');
+        Route::get('profile', [App\Http\Controllers\EmployeeArea\ProfileController::class, 'show'])->name('profile.show');
+        Route::get('profile/edit', [App\Http\Controllers\EmployeeArea\ProfileController::class, 'edit'])->name('profile.edit');
+        Route::put('profile', [App\Http\Controllers\EmployeeArea\ProfileController::class, 'update'])->name('profile.update');
+
+        Route::get('attendance', [App\Http\Controllers\EmployeeArea\AttendanceController::class, 'index'])->name('attendance.index');
+        Route::post('attendance/check-in', [App\Http\Controllers\EmployeeArea\AttendanceController::class, 'checkIn'])->name('attendance.checkin');
+        Route::post('attendance/check-out', [App\Http\Controllers\EmployeeArea\AttendanceController::class, 'checkOut'])->name('attendance.checkout');
+
+        Route::get('leaves', [App\Http\Controllers\EmployeeArea\LeaveController::class, 'index'])->name('leaves.index');
+        Route::get('leaves/create', [App\Http\Controllers\EmployeeArea\LeaveController::class, 'create'])->name('leaves.create');
+        Route::post('leaves', [App\Http\Controllers\EmployeeArea\LeaveController::class, 'store'])->name('leaves.store');
+        Route::get('leaves/{leave}', [App\Http\Controllers\EmployeeArea\LeaveController::class, 'show'])->name('leaves.show');
     });
 });
 

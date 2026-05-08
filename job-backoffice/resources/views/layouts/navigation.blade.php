@@ -1,5 +1,7 @@
 @php
     $isAdmin = auth()->user()->hasRole('admin');
+    $isManager = auth()->user()->hasRole('manager');
+    $isEmployee = auth()->user()->hasRole('employee');
     $hasCompany = (bool) auth()->user()->company;
 @endphp
 
@@ -24,59 +26,131 @@
         </div>
 
         <div class="space-y-6">
-            <div>
-                <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Overview</div>
-                <ul class="space-y-1">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        Dashboard
-                    </x-nav-link>
-                </ul>
-            </div>
-
-            <div>
-                <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Workflows</div>
-                <ul class="space-y-1">
-                    <x-nav-link :href="route('job-applications.index')" :active="request()->routeIs('job-applications.*')">
-                        Job Applications
-                    </x-nav-link>
-
-                    <x-nav-link :href="route('job-vacancies.index')" :active="request()->routeIs('job-vacancies.*')">
-                        Job Vacancies
-                    </x-nav-link>
-
-                    @if ($hasCompany)
-                        <x-nav-link :href="route('my-company.show')" :active="request()->routeIs('my-company.*')">
-                            My Company
-                        </x-nav-link>
-
-                        <x-nav-link :href="route('departments.index')" :active="request()->routeIs('departments.*')">
-                            Departments
-                        </x-nav-link>
-
-                        <x-nav-link :href="route('company-employees.index')" :active="request()->routeIs('company-employees.*')">
-                            Employees
-                        </x-nav-link>
-                    @endif
-                </ul>
-            </div>
-
-            @if ($isAdmin)
+            @if ($isManager)
+                <!-- Manager Navigation -->
                 <div>
-                    <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Administration</div>
+                    <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Overview</div>
                     <ul class="space-y-1">
-                        <x-nav-link :href="route('companies.index')" :active="request()->routeIs('companies.*')">
-                            Companies
-                        </x-nav-link>
-
-                        <x-nav-link :href="route('job-categories.index')" :active="request()->routeIs('job-categories.*')">
-                            Categories
-                        </x-nav-link>
-
-                        <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
-                            Users
+                        <x-nav-link :href="route('manager.dashboard')" :active="request()->routeIs('manager.dashboard')">
+                            Dashboard
                         </x-nav-link>
                     </ul>
                 </div>
+
+                <div>
+                    <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Management</div>
+                    <ul class="space-y-1">
+                        <x-nav-link :href="route('manager.departments.index')" :active="request()->routeIs('manager.departments.*')">
+                            My Departments
+                        </x-nav-link>
+
+                        <x-nav-link :href="route('manager.employees.index')" :active="request()->routeIs('manager.employees.*')">
+                            Employees
+                        </x-nav-link>
+
+                        <x-nav-link :href="route('manager.attendance.index')" :active="request()->routeIs('manager.attendance.*')">
+                            Attendance
+                        </x-nav-link>
+
+                        <x-nav-link :href="route('manager.leaves.index')" :active="request()->routeIs('manager.leaves.*')">
+                            Leave Requests
+                        </x-nav-link>
+                    </ul>
+                </div>
+
+                <div>
+                    <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Account</div>
+                    <ul class="space-y-1">
+                        <x-nav-link :href="route('profile.edit')" :active="request()->routeIs('profile.edit')">
+                            Profile
+                        </x-nav-link>
+                    </ul>
+                </div>
+
+            @elseif ($isEmployee)
+                <!-- Employee Navigation -->
+                <div>
+                    <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Overview</div>
+                    <ul class="space-y-1">
+                        <x-nav-link :href="route('employee.dashboard')" :active="request()->routeIs('employee.dashboard')">
+                            Dashboard
+                        </x-nav-link>
+                    </ul>
+                </div>
+
+                <div>
+                    <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Self Service</div>
+                    <ul class="space-y-1">
+                        <x-nav-link :href="route('employee.profile.show')" :active="request()->routeIs('employee.profile.*')">
+                            My Profile
+                        </x-nav-link>
+
+                        <x-nav-link :href="route('employee.attendance.index')" :active="request()->routeIs('employee.attendance.*')">
+                            Attendance
+                        </x-nav-link>
+
+                        <x-nav-link :href="route('employee.leaves.index')" :active="request()->routeIs('employee.leaves.*')">
+                            Leave Requests
+                        </x-nav-link>
+                    </ul>
+                </div>
+
+            @else
+                <!-- Company/Admin Navigation -->
+                <div>
+                    <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Overview</div>
+                    <ul class="space-y-1">
+                        <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                            Dashboard
+                        </x-nav-link>
+                    </ul>
+                </div>
+
+                <div>
+                    <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Workflows</div>
+                    <ul class="space-y-1">
+                        <x-nav-link :href="route('job-applications.index')" :active="request()->routeIs('job-applications.*')">
+                            Job Applications
+                        </x-nav-link>
+
+                        <x-nav-link :href="route('job-vacancies.index')" :active="request()->routeIs('job-vacancies.*')">
+                            Job Vacancies
+                        </x-nav-link>
+
+                        @if ($hasCompany)
+                            <x-nav-link :href="route('my-company.show')" :active="request()->routeIs('my-company.*')">
+                                My Company
+                            </x-nav-link>
+
+                            <x-nav-link :href="route('departments.index')" :active="request()->routeIs('departments.*')">
+                                Departments
+                            </x-nav-link>
+
+                            <x-nav-link :href="route('company-employees.index')" :active="request()->routeIs('company-employees.*')">
+                                Employees
+                            </x-nav-link>
+                        @endif
+                    </ul>
+                </div>
+
+                @if ($isAdmin)
+                    <div>
+                        <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Administration</div>
+                        <ul class="space-y-1">
+                            <x-nav-link :href="route('companies.index')" :active="request()->routeIs('companies.*')">
+                                Companies
+                            </x-nav-link>
+
+                            <x-nav-link :href="route('job-categories.index')" :active="request()->routeIs('job-categories.*')">
+                                Categories
+                            </x-nav-link>
+
+                            <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
+                                Users
+                            </x-nav-link>
+                        </ul>
+                    </div>
+                @endif
             @endif
         </div>
     </div>
