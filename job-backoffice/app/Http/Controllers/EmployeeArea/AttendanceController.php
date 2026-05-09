@@ -7,7 +7,6 @@ use App\Models\AttendanceRecord;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
-use App\Services\ActivityLogService;
 
 class AttendanceController extends Controller
 {
@@ -39,8 +38,6 @@ class AttendanceController extends Controller
         $record->status = 'present';
         $record->save();
 
-        app(ActivityLogService::class)->log($employee->company_id, $user->id, 'attendance.check_in', "Check-in by {$user->name}", $record, ['attendance_date' => $today]);
-
         return Redirect::back()->with('success', 'Checked in successfully.');
     }
 
@@ -62,8 +59,6 @@ class AttendanceController extends Controller
 
         $record->check_out_at = now();
         $record->save();
-
-        app(ActivityLogService::class)->log($employee->company_id, $user->id, 'attendance.check_out', "Check-out by {$user->name}", $record, ['attendance_date' => $today]);
 
         return Redirect::back()->with('success', 'Checked out successfully.');
     }

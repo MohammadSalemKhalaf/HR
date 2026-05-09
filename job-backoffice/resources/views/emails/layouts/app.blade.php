@@ -128,6 +128,14 @@
             background: #e0e7ff;
             color: #3730a3;
         }
+        .badge.warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .badge.danger {
+            background: #fecaca;
+            color: #991b1b;
+        }
         .button-wrapper {
             text-align: center;
             margin: 30px 0;

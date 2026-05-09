@@ -55,6 +55,9 @@
                         <x-nav-link :href="route('manager.leaves.index')" :active="request()->routeIs('manager.leaves.*')">
                             Leave Requests
                         </x-nav-link>
+                        <x-nav-link :href="route('manager.department-notifications.index')" :active="request()->routeIs('manager.department-notifications.*')">
+                            Department Notifications
+                        </x-nav-link>
                         <x-nav-link :href="route('manager.tasks.index')" :active="request()->routeIs('manager.tasks.*')">
                             Tasks
                         </x-nav-link>

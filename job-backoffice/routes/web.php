@@ -12,12 +12,11 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EmployeeViewController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Manager\TaskController as ManagerTaskController;
+use App\Http\Controllers\EmployeeArea\TaskController as EmployeeTaskController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\Manager\TaskController as ManagerTaskController;
-use App\Http\Controllers\EmployeeArea\TaskController as EmployeeTaskController;
-use App\Http\Controllers\TestEmailController;
 
 
     // Route::get('/', [AuthenticatedSessionController::class, 'create'])->name('create');
@@ -78,14 +77,17 @@ Route::middleware('auth')->group(function () {
     // Manager web area
     Route::middleware(['auth','role:manager'])->prefix('manager')->name('manager.')->group(function () {
         Route::get('dashboard', [App\Http\Controllers\Manager\DashboardController::class, 'index'])->name('dashboard');
-            // Task management
-            Route::get('tasks', [ManagerTaskController::class, 'index'])->name('tasks.index');
-            Route::get('tasks/create', [ManagerTaskController::class, 'create'])->name('tasks.create');
-            Route::post('tasks', [ManagerTaskController::class, 'store'])->name('tasks.store');
-            Route::get('tasks/{task}', [ManagerTaskController::class, 'show'])->name('tasks.show');
-            Route::get('tasks/{task}/edit', [ManagerTaskController::class, 'edit'])->name('tasks.edit');
-            Route::post('tasks/{task}', [ManagerTaskController::class, 'update'])->name('tasks.update');
-            Route::delete('tasks/{task}', [ManagerTaskController::class, 'destroy'])->name('tasks.destroy');
+
+        Route::get('tasks', [ManagerTaskController::class, 'index'])->name('tasks.index');
+        Route::get('tasks/create', [ManagerTaskController::class, 'create'])->name('tasks.create');
+        Route::post('tasks', [ManagerTaskController::class, 'store'])->name('tasks.store');
+        Route::get('tasks/{task}', [ManagerTaskController::class, 'show'])->name('tasks.show');
+        Route::get('tasks/{task}/edit', [ManagerTaskController::class, 'edit'])->name('tasks.edit');
+        Route::post('tasks/{task}', [ManagerTaskController::class, 'update'])->name('tasks.update');
+        Route::delete('tasks/{task}', [ManagerTaskController::class, 'destroy'])->name('tasks.destroy');
+
+        Route::get('department-notifications', [App\Http\Controllers\Manager\DepartmentNotificationController::class, 'index'])->name('department-notifications.index');
+        Route::post('department-notifications', [App\Http\Controllers\Manager\DepartmentNotificationController::class, 'store'])->name('department-notifications.store');
 
         Route::get('departments', [App\Http\Controllers\Manager\DepartmentController::class, 'index'])->name('departments.index');
         Route::get('departments/{department}', [App\Http\Controllers\Manager\DepartmentController::class, 'show'])->name('departments.show');
@@ -103,10 +105,11 @@ Route::middleware('auth')->group(function () {
     // Employee web area
     Route::middleware(['auth','role:employee'])->prefix('employee')->name('employee.')->group(function () {
         Route::get('dashboard', [App\Http\Controllers\EmployeeArea\DashboardController::class, 'index'])->name('dashboard');
-            // Assigned tasks
-            Route::get('tasks', [EmployeeTaskController::class, 'index'])->name('tasks.index');
-            Route::get('tasks/{task}', [EmployeeTaskController::class, 'show'])->name('tasks.show');
-            Route::post('tasks/{task}/status', [EmployeeTaskController::class, 'updateStatus'])->name('tasks.update_status');
+
+        Route::get('tasks', [EmployeeTaskController::class, 'index'])->name('tasks.index');
+        Route::get('tasks/{task}', [EmployeeTaskController::class, 'show'])->name('tasks.show');
+        Route::post('tasks/{task}/status', [EmployeeTaskController::class, 'updateStatus'])->name('tasks.update_status');
+
         Route::get('profile', [App\Http\Controllers\EmployeeArea\ProfileController::class, 'show'])->name('profile.show');
         Route::get('profile/edit', [App\Http\Controllers\EmployeeArea\ProfileController::class, 'edit'])->name('profile.edit');
         Route::put('profile', [App\Http\Controllers\EmployeeArea\ProfileController::class, 'update'])->name('profile.update');
@@ -126,10 +129,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
-    // Test email routes (for SMTP verification)
-    Route::post('/test-email', [TestEmailController::class, 'sendTestEmail'])->name('test-email');
-    Route::post('/test-email/sample-task', [TestEmailController::class, 'sendSampleTaskNotification'])->name('test-email.sample-task');
 });
 
 Route::get('/employees', [EmployeeController::class, 'index']);
