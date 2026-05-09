@@ -14,8 +14,13 @@ app.use(pinia)
 app.use(router)
 app.use(Toast, { position: 'top-right' })
 
-// Fetch current user before mounting so route guards can act
-const auth = useAuthStore(pinia)
-auth.fetchUser().finally(() => {
-	app.mount('#app')
-})
+// Restore auth from localStorage and fetch user before mounting
+const auth = useAuthStore()
+auth.restoreAuth()
+if (auth.token) {
+  auth.fetchUser().finally(() => {
+    app.mount('#app')
+  })
+} else {
+  app.mount('#app')
+}

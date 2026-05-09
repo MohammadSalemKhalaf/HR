@@ -11,12 +11,33 @@ const routes: Array<RouteRecordRaw> = [
     component: AdminLayout,
     meta: { requiresAuth: true, role: 'admin' },
     children: [
-      { path: '', name: 'AdminDashboard', component: Dashboard },
-      { path: 'companies', name: 'CompaniesList', component: CompaniesList },
-      { path: 'departments', name: 'DepartmentsList', component: DepartmentsList },
-      { path: 'employees', name: 'EmployeesList', component: EmployeesList }
+      {
+        path: '',
+        name: 'AdminDashboard',
+        component: Dashboard,
+        meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
+        path: 'companies',
+        name: 'CompaniesList',
+        component: CompaniesList,
+        meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
+        path: 'departments',
+        name: 'DepartmentsList',
+        component: DepartmentsList,
+        meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
+        path: 'employees',
+        name: 'EmployeesList',
+        component: EmployeesList,
+        meta: { requiresAuth: true, role: 'admin' }
+      }
     ]
   }
 ]
 
 export default routes
+

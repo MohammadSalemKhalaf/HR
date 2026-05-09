@@ -1,13 +1,22 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import AdminHome from '@/pages/AdminHome.vue'
+import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import Login from '@/pages/Login.vue'
+import AdminHome from '@/pages/AdminHome.vue'
 import adminRoutes from '@/modules/admin/router'
 import { useAuthStore } from '@/stores/auth'
 
-const routes = [
+const routes: Array<RouteRecordRaw> = [
   { path: '/', redirect: '/admin' },
-  { path: '/login', name: 'Login', component: Login },
-  ...adminRoutes
+  {
+    path: '/login',
+    name: 'Login',
+    component: Login,
+    meta: { layout: 'auth', requiresGuest: true }
+  },
+  ...adminRoutes,
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/admin'
+  }
 ]
 
 const router = createRouter({
@@ -15,18 +24,47 @@ const router = createRouter({
   routes
 })
 
+/**
+ * Global route guard - handles auth, guest, and role-based access
+ */
 router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore()
-  if (to.meta.requiresAuth) {
-    if (!auth.user) {
-      await auth.fetchUser()
+
+  // Guest-only routes (login, register, etc.)
+  if (to.meta.requiresGuest) {
+    if (auth.isAuthenticated) {
+      // Redirect authenticated users to their dashboard
+      return next({ name: 'AdminDashboard' })
     }
-    if (!auth.user) return next({ name: 'Login' })
-    // role guard
-    if (to.meta.role && auth.user.role !== to.meta.role) return next({ name: 'Login' })
     return next()
   }
+
+  // Auth-required routes
+  if (to.meta.requiresAuth) {
+    // Restore auth if not loaded yet
+    if (!auth.user && auth.token) {
+      await auth.fetchUser()
+    }
+
+    // Not authenticated
+    if (!auth.isAuthenticated) {
+      return next({ name: 'Login' })
+    }
+
+    // Role-based access control
+    if (to.meta.role) {
+      const requiredRoles = Array.isArray(to.meta.role) ? to.meta.role : [to.meta.role]
+      const userRole = auth.user?.role
+
+      if (!requiredRoles.includes(userRole)) {
+        console.warn(`Access denied: User role '${userRole}' does not match required roles:`, requiredRoles)
+        return next({ name: 'Login' })
+      }
+    }
+  }
+
   return next()
 })
 
 export default router
+
