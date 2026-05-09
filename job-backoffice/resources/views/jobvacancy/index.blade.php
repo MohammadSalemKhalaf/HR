@@ -1,195 +1,101 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Job Vacancies
-                @if(request('archived') == 'true')
-                    <span class="text-sm text-gray-500 ml-2">(Archived)</span>
-                @endif
-            </h2>
-        </div>
-    </x-slot>
-
-    <div class="p-6">
-
-        {{-- Success Message --}}
-        @if(session('success'))
-            <div id="success-message"
-                 class="mb-4 bg-green-100 border border-green-300 text-green-700 px-4 py-3 rounded-lg transition-opacity duration-500">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        {{-- Top Bar --}}
-        <div class="flex justify-between items-center mb-6">
-
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-                <h3 class="text-lg font-semibold text-gray-700">
-                    Vacancies List
-                    <span class="text-sm text-gray-500 ml-2">
-                        (Total: {{ $jobVacancies->total() }})
-                    </span>
-                </h3>
+                <p class="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Operations</p>
+                <h2 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">
+                    Job Vacancies
+                    @if(request('archived') == 'true')
+                        <span class="ml-2 text-sm font-medium text-slate-500">(Archived)</span>
+                    @endif
+                </h2>
+                <p class="mt-2 text-sm text-slate-600">Manage open roles and their archived history.</p>
             </div>
 
-            <div class="flex items-center space-x-3">
-
+            <div class="flex flex-wrap gap-3">
                 @if(request('archived') == 'true')
-
-                    <a href="{{ route('job-vacancies.index') }}"
-                       class="px-4 py-2 bg-black text-white text-sm rounded-md hover:bg-gray-800">
+                    <a href="{{ route('job-vacancies.index') }}" class="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">
                         Active Vacancies
                     </a>
-
                 @else
-
-                    <a href="{{ route('job-vacancies.index', ['archived' => 'true']) }}"
-                       class="px-4 py-2 bg-gray-700 text-white text-sm rounded-md hover:bg-gray-800">
+                    <a href="{{ route('job-vacancies.index', ['archived' => 'true']) }}" class="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
                         Archived Vacancies
                     </a>
 
-                    <a href="{{ route('job-vacancies.create') }}"
-                       class="px-5 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">
-                        ➕ Add Vacancy
+                    <a href="{{ route('job-vacancies.create') }}" class="rounded-full bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500">
+                        Add Vacancy
                     </a>
-
                 @endif
-
             </div>
         </div>
+    </x-slot>
 
-        {{-- Table --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-200">
+    <div class="rounded-[2rem] border border-white/70 bg-white/85 shadow-lg shadow-slate-950/5 backdrop-blur overflow-hidden">
+        <div class="border-b border-slate-200 px-6 py-4">
+            <p class="text-sm font-medium text-slate-500">Vacancies List</p>
+            <h3 class="text-lg font-semibold text-slate-900">Total {{ $jobVacancies->total() }}</h3>
+        </div>
 
-                <thead class="bg-gray-50">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                            Title
-                        </th>
-                       @if(auth()->user()->role == "admin")
-                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                            Company
-                        </th>
-                       @endif
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                            Category
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                            Location
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                            Type
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                            Salary
-                        </th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-                            Actions
-                        </th>
+                        <th class="px-6 py-3 text-left">Title</th>
+                        @if(auth()->user()->role == 'admin')
+                            <th class="px-6 py-3 text-left">Company</th>
+                        @endif
+                        <th class="px-6 py-3 text-left">Category</th>
+                        <th class="px-6 py-3 text-left">Location</th>
+                        <th class="px-6 py-3 text-left">Type</th>
+                        <th class="px-6 py-3 text-left">Salary</th>
+                        <th class="px-6 py-3 text-right">Actions</th>
                     </tr>
                 </thead>
 
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-slate-100 bg-white text-sm">
                     @forelse ($jobVacancies as $job)
-                        <tr class="hover:bg-gray-50 transition">
-
-                            <td class="px-6 py-4 font-medium">
-                                <a href="{{ route('job-vacancies.show', $job->id) }}"
-                                   class="text-gray-800 hover:text-indigo-600 hover:underline">
-                                    {{ $job->title }}
-                                </a>
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-6 py-4 font-medium text-slate-900">
+                                <a href="{{ route('job-vacancies.show', $job->id) }}" class="hover:text-cyan-700 hover:underline">{{ $job->title }}</a>
                             </td>
-
-                            @if(auth()->user()->role == "admin")
-                            <td class="px-6 py-4 text-gray-600">
-                                {{ $job->company?->name ?? '-' }}
-                            </td>
+                            @if(auth()->user()->role == 'admin')
+                                <td class="px-6 py-4 text-slate-600">{{ $job->company?->name ?? '-' }}</td>
                             @endif
-                            <td class="px-6 py-4 text-gray-600">
-                                {{ $job->jobcategory?->name ?? '-' }}
+                            <td class="px-6 py-4 text-slate-600">{{ $job->jobcategory?->name ?? '-' }}</td>
+                            <td class="px-6 py-4 text-slate-600">{{ $job->location }}</td>
+                            <td class="px-6 py-4 text-slate-600">{{ ucfirst($job->type) }}</td>
+                            <td class="px-6 py-4 text-slate-600">${{ number_format($job->salary, 2) }}</td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end gap-3">
+                                    @if(request('archived') == 'true')
+                                        <form action="{{ route('job-vacancies.restore', $job->id) }}" method="POST" onsubmit="return confirm('Restore this vacancy?')">
+                                            @csrf
+                                            @method('PUT')
+                                            <button type="submit" class="font-semibold text-emerald-600 hover:text-emerald-700">Restore</button>
+                                        </form>
+                                    @else
+                                        <a href="{{ route('job-vacancies.edit', $job->id) }}" class="font-semibold text-cyan-700 hover:text-cyan-800">Edit</a>
+                                        <form action="{{ route('job-vacancies.destroy', $job->id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="font-semibold text-rose-600 hover:text-rose-700">Archive</button>
+                                        </form>
+                                    @endif
+                                </div>
                             </td>
-
-                            <td class="px-6 py-4 text-gray-600">
-                                {{ $job->location }}
-                            </td>
-
-                            <td class="px-6 py-4 text-gray-600">
-                                {{ ucfirst($job->type) }}
-                            </td>
-
-                            <td class="px-6 py-4 text-gray-600">
-                                ${{ number_format($job->salary, 2) }}
-                            </td>
-
-<td class="px-6 py-4">
-    <div class="flex justify-end items-center gap-4">
-                                @if(request('archived') == 'true')
-
-                                    <form action="{{ route('job-vacancies.restore', $job->id) }}"
-                                          method="POST"
-                                          class="inline-block"
-                                          onsubmit="return confirm('Restore this vacancy?')">
-                                        @csrf
-                                        @method('PUT')
-
-                                        <button type="submit"
-                                                class="text-green-600 hover:text-green-800 font-medium">
-                                            ♻️ Restore
-                                        </button>
-                                    </form>
-                                @else
-
-                                    <a href="{{ route('job-vacancies.edit', $job->id) }}"
-                                       class="text-blue-600 hover:text-blue-800 font-medium">
-                                        ✏️ Edit
-                                    </a>
-
-                                    <form action="{{ route('job-vacancies.destroy', $job->id) }}"
-                                          method="POST"
-                                          class="inline-block"
-                                          onsubmit="return confirm('Are you sure?')">
-                                        @csrf
-                                        @method('DELETE')
-
-                                        <button type="submit"
-                                                class="text-red-600 hover:text-red-800 font-medium">
-                                            🗑 Archive
-                                        </button>
-                                    </form>
-
-                                @endif
-
-                            </td>
-                            </div>
                         </tr>
-
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-6 text-center text-gray-500">
-                                No vacancies found.
-                            </td>
+                            <td colspan="{{ auth()->user()->hasRole('admin') ? 7 : 6 }}" class="px-6 py-12 text-center text-slate-500">No vacancies found.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
 
-        {{-- Pagination --}}
-        <div class="mt-6">
+        <div class="border-t border-slate-200 px-6 py-4">
             {{ $jobVacancies->withQueryString()->links() }}
         </div>
-
     </div>
-
-    <script>
-        setTimeout(function() {
-            const message = document.getElementById('success-message');
-            if (message) {
-                message.style.opacity = '0';
-                setTimeout(() => message.remove(), 500);
-            }
-        }, 3000);
-    </script>
 
 </x-app-layout>

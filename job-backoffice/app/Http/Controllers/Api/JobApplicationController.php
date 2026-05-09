@@ -29,41 +29,78 @@ class JobApplicationController extends BaseApiController
         $validator = Validator::make($request->all(), [
             'user_id' => ['required', 'exists:users,id'],
             'job_vacancy_id' => ['required', 'exists:job_vacancies,id'],
-            'resume_id' => ['nullable', 'exists:resumes,id'],
+            'resume_id' => ['nullable'],
+            'cv_file' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:5120'],
         ]);
 
         if ($validator->fails()) {
             return $this->error('Validation failed.', $validator->errors(), 422);
         }
 
-        $resumeId = $request->input('resume_id');
+        $userId = $request->string('user_id');
+        $jobVacancyId = $request->string('job_vacancy_id');
+        $providedResumeId = $request->input('resume_id');
+        $cvFile = $request->file('cv_file');
+    // Convert Stringable objects to plain strings
+    $userId = (string) $userId;
+    $jobVacancyId = (string) $jobVacancyId;
 
-        if (! $resumeId) {
-            $resume = Resume::where('userId', $request->string('user_id'))->latest()->first();
 
-            if (! $resume) {
-                $resume = Resume::create([
-                    'userId' => $request->string('user_id'),
-                    'filename' => 'auto-generated-'.$request->string('user_id').'.pdf',
-                    'fileUrl' => '/storage/resumes/auto-generated-'.$request->string('user_id').'.pdf',
-                    'contactDetails' => 'N/A',
-                    'education' => 'N/A',
-                    'experience' => 'N/A',
-                    'skills' => 'N/A',
-                    'summary' => 'Auto-generated placeholder resume for application flow.',
-                ]);
-            }
+        // Require at least one: resume_id or cv_file
+        if (! $providedResumeId && ! $cvFile) {
+            return $this->error('Either resume_id or cv_file must be provided.', null, 422);
+        }
+
+        $resumeId = null;
+
+        // PRIORITY: If cv_file provided, create new resume from it (takes precedence)
+        if ($cvFile) {
+            $filename = $userId.'-'.now()->timestamp.'.'.$cvFile->getClientOriginalExtension();
+            $path = $cvFile->storeAs('public/resumes', $filename);
+            $fileUrl = '/storage/resumes/'.$filename;
+
+            $resume = Resume::create([
+                'userId' => $userId,
+                'filename' => $cvFile->getClientOriginalName(),
+                'fileUrl' => $fileUrl,
+                'contactDetails' => 'N/A',
+                'education' => 'N/A',
+                'experience' => 'N/A',
+                'skills' => 'N/A',
+                'summary' => 'Uploaded resume file during application.',
+            ]);
 
             $resumeId = $resume->id;
+        }
+
+        // FALLBACK: If only resume_id provided (no cv_file), validate and use existing resume
+        if (! $cvFile && $providedResumeId) {
+            $resume = Resume::find($providedResumeId);
+
+            if (! $resume || $resume->userId !== $userId) {
+                return $this->error('Invalid resume. Resume must belong to the applying user.', null, 422);
+            }
+
+            // Ensure resume has an uploaded file (not auto-generated)
+            if (! $resume->fileUrl || strpos($resume->fileUrl, 'auto-generated') !== false) {
+                return $this->error('Invalid resume file. Upload a real CV before applying.', null, 422);
+            }
+
+            $resumeId = $providedResumeId;
+        }
+
+        // Prevent duplicate applications by same user to same vacancy
+        if (JobApplication::where('userId', $userId)->where('jobVacancyId', $jobVacancyId)->exists()) {
+            return $this->error('You have already applied to this vacancy.', null, 409);
         }
 
         $application = JobApplication::create([
             'status' => 'pending',
             'aiGeneratedScore' => 0,
             'aiGeneratedFeedback' => null,
-            'userId' => $request->string('user_id'),
+            'userId' => $userId,
             'resumeId' => $resumeId,
-            'jobVacancyId' => $request->string('job_vacancy_id'),
+            'jobVacancyId' => $jobVacancyId,
         ]);
 
         return $this->success('Application created successfully.', $application->load(['user', 'resume', 'jobvacancy.company']), 201);

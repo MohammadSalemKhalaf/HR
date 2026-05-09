@@ -33,33 +33,8 @@ class CompanyCreateRequest extends FormRequest
             Rule::unique('companies', 'website')->ignore($companyId),
         ],
 
-        'owner_type' => ['required', 'in:existing,new'],
-
-        'ownerId' => [
-            'required_if:owner_type,existing',
-            'nullable',
-            'exists:users,id',
-        ],
-
-        'new_owner_name' => [
-            'required_if:owner_type,new',
-            'nullable',
-            'string',
-            'max:255'
-        ],
-
-        'new_owner_email' => [
-            'required_if:owner_type,new',
-            'nullable',
-            'email',
-            'unique:users,email'
-        ],
-
-        'new_owner_password' => [
-            'required_if:owner_type,new',
-            'nullable',
-            'min:6'
-        ],
+            'email' => ['required', 'email', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:6'],
     ];
 }
 

@@ -12,11 +12,15 @@ class AttendanceController extends BaseApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $authorization = $this->employeeAuthorization($request);
+        if ($authorization instanceof JsonResponse) {
+            return $authorization;
+        }
+
+        $employee = $authorization;
         $query = AttendanceRecord::with('employee.user')->latest();
 
-        if ($request->filled('employee_id')) {
-            $query->where('employee_id', $request->string('employee_id'));
-        }
+        $query->where('employee_id', $employee->id);
 
         if ($request->filled('attendance_date')) {
             $query->where('attendance_date', $request->date('attendance_date'));
@@ -33,18 +37,17 @@ class AttendanceController extends BaseApiController
         return $this->success('Attendance records retrieved successfully.', $query->get());
     }
 
-    public function checkIn(Request $request, string $employee_id): JsonResponse
+    public function checkIn(Request $request, ?string $employee_id = null): JsonResponse
     {
-        $employee = Employee::find($employee_id);
-
-        if (! $employee) {
-            return $this->notFound('Employee not found.');
+        $authorization = $this->employeeAuthorization($request, $employee_id);
+        if ($authorization instanceof JsonResponse) {
+            return $authorization;
         }
 
+        $employee = $authorization;
         $today = now()->toDateString();
 
-        // Check if already checked in today
-        $existing = AttendanceRecord::where('employee_id', $employee_id)
+        $existing = AttendanceRecord::where('employee_id', $employee->id)
             ->where('attendance_date', $today)
             ->first();
 
@@ -53,7 +56,7 @@ class AttendanceController extends BaseApiController
         }
 
         $record = $existing ?? new AttendanceRecord([
-            'employee_id' => $employee_id,
+            'employee_id' => $employee->id,
             'attendance_date' => $today,
         ]);
 
@@ -64,18 +67,17 @@ class AttendanceController extends BaseApiController
         return $this->success('Check-in recorded successfully.', $record->load('employee.user'), 201);
     }
 
-    public function checkOut(Request $request, string $employee_id): JsonResponse
+    public function checkOut(Request $request, ?string $employee_id = null): JsonResponse
     {
-        $employee = Employee::find($employee_id);
-
-        if (! $employee) {
-            return $this->notFound('Employee not found.');
+        $authorization = $this->employeeAuthorization($request, $employee_id);
+        if ($authorization instanceof JsonResponse) {
+            return $authorization;
         }
 
+        $employee = $authorization;
         $today = now()->toDateString();
 
-        // Get today's attendance record
-        $record = AttendanceRecord::where('employee_id', $employee_id)
+        $record = AttendanceRecord::where('employee_id', $employee->id)
             ->where('attendance_date', $today)
             ->first();
 
@@ -91,5 +93,26 @@ class AttendanceController extends BaseApiController
         $record->save();
 
         return $this->success('Check-out recorded successfully.', $record->fresh('employee.user'));
+    }
+
+    private function employeeAuthorization(Request $request, ?string $employeeId = null): Employee|JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $user || $user->role !== 'employee') {
+            return $this->error('Forbidden.', [], 403);
+        }
+
+        $employee = $user->employee;
+
+        if (! $employee) {
+            return $this->notFound('Employee profile not found.');
+        }
+
+        if ($employeeId && $employee->id !== $employeeId) {
+            return $this->error('Forbidden.', [], 403);
+        }
+
+        return $employee;
     }
 }

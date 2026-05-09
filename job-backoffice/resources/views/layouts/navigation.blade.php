@@ -1,56 +1,176 @@
-<nav class="w-[250px] bg-white h-screen border-r border-gray-200">
-    <!-- Logo Section -->
-    <div class="flex items-center px-6 border-b border-gray-200 py-4">
-        <a href="{{ route('dashboard') }}" class="flex items-center space-x-2">
-            <x-application-logo class="h-6 w-auto fill-current text-gray-800" />
-            <span class="text-lg font-semibold text-gray-800"> {{ __('Shaghalni') }}</span>
+@php
+    $isAdmin = auth()->user()->hasRole('admin');
+    $isManager = auth()->user()->hasRole('manager');
+    $isEmployee = auth()->user()->hasRole('employee');
+    $hasCompany = (bool) auth()->user()->company;
+@endphp
+
+<nav class="flex h-full flex-col">
+    <div class="border-b border-white/10 px-6 py-6">
+        <a href="{{ route('dashboard') }}" class="flex items-center gap-3">
+            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/15">
+                <x-application-logo class="h-7 w-7 fill-current text-cyan-300" />
+            </div>
+            <div>
+                <div class="text-lg font-bold tracking-tight text-white">{{ config('app.name', 'Shaghalni') }}</div>
+                <div class="text-xs text-slate-400">Backoffice control panel</div>
+            </div>
         </a>
     </div>
 
-    <!-- Navigation Links -->
-    <ul class="flex flex-col px-4 py-6 space-y-4">
-        <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-            {{ __('Dashboard') }}
-        </x-nav-link>
-    @if (Auth::user()->role == 'admin')
-        <x-nav-link :href="route('companies.index')" :active="request()->routeIs('company.*')">
-            {{ __('Companies') }}
-        </x-nav-link>
-    @endif
+    <div class="flex-1 overflow-y-auto px-4 py-5">
+        <div class="mb-6 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div class="text-xs uppercase tracking-[0.25em] text-slate-400">Signed in</div>
+            <div class="mt-2 text-sm font-semibold text-white">{{ auth()->user()->name }}</div>
+            <div class="text-xs text-slate-400">Role: {{ auth()->user()->roleName() }}</div>
+        </div>
 
-    @if (Auth::user()->role == 'company_owner')
-        <x-nav-link :href="route('my-company.show')" :active="request()->routeIs('my-company.show')">
-            {{ __('My Company') }}
-        </x-nav-link>
-    @endif
+        <div class="space-y-6">
+            @if ($isManager)
+                <!-- Manager Navigation -->
+                <div>
+                    <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Overview</div>
+                    <ul class="space-y-1">
+                        <x-nav-link :href="route('manager.dashboard')" :active="request()->routeIs('manager.dashboard')">
+                            Dashboard
+                        </x-nav-link>
+                    </ul>
+                </div>
 
-        <x-nav-link :href="route('job-applications.index')" :active="request()->routeIs('application.*')">
-            {{ __('Job Applications') }}
-        </x-nav-link>
+                <div>
+                    <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Management</div>
+                    <ul class="space-y-1">
+                        <x-nav-link :href="route('manager.departments.index')" :active="request()->routeIs('manager.departments.*')">
+                            My Departments
+                        </x-nav-link>
 
-       @if (Auth::user()->role == 'admin')
-        <x-nav-link :href="route('job-categories.index')" :active="request()->routeIs('category.*')">
-            {{ __('Categories') }}
-        </x-nav-link>
-       @endif
+                        <x-nav-link :href="route('manager.employees.index')" :active="request()->routeIs('manager.employees.*')">
+                            Employees
+                        </x-nav-link>
 
-        <x-nav-link :href="route('job-vacancies.index')" :active="request()->routeIs('job-vacancy.*')">
-            {{ __('Job Vacancies') }}
-        </x-nav-link>
+                        <x-nav-link :href="route('manager.attendance.index')" :active="request()->routeIs('manager.attendance.*')">
+                            Attendance
+                        </x-nav-link>
 
-        @if (Auth::user()->role == 'admin')
-        <x-nav-link :href="route('users.index')" :active="request()->routeIs('user.*')">
-            {{ __('Users') }}
-        </x-nav-link>
-        @endif
-        <hr />
-        <!-- Logout -->
-        <form method="POST" action="{{ route('logout') }}" class="mt-4">
+                        <x-nav-link :href="route('manager.leaves.index')" :active="request()->routeIs('manager.leaves.*')">
+                            Leave Requests
+                        </x-nav-link>
+                        <x-nav-link :href="route('manager.department-notifications.index')" :active="request()->routeIs('manager.department-notifications.*')">
+                            Department Notifications
+                        </x-nav-link>
+                        <x-nav-link :href="route('manager.tasks.index')" :active="request()->routeIs('manager.tasks.*')">
+                            Tasks
+                        </x-nav-link>
+                    </ul>
+                </div>
+
+                <div>
+                    <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Account</div>
+                    <ul class="space-y-1">
+                        <x-nav-link :href="route('profile.edit')" :active="request()->routeIs('profile.edit')">
+                            Profile
+                        </x-nav-link>
+                    </ul>
+                </div>
+
+            @elseif ($isEmployee)
+                <!-- Employee Navigation -->
+                <div>
+                    <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Overview</div>
+                    <ul class="space-y-1">
+                        <x-nav-link :href="route('employee.dashboard')" :active="request()->routeIs('employee.dashboard')">
+                            Dashboard
+                        </x-nav-link>
+                    </ul>
+                </div>
+
+                <div>
+                    <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Self Service</div>
+                    <ul class="space-y-1">
+                        <x-nav-link :href="route('employee.profile.show')" :active="request()->routeIs('employee.profile.*')">
+                            My Profile
+                        </x-nav-link>
+
+                        <x-nav-link :href="route('employee.attendance.index')" :active="request()->routeIs('employee.attendance.*')">
+                            Attendance
+                        </x-nav-link>
+
+                        <x-nav-link :href="route('employee.leaves.index')" :active="request()->routeIs('employee.leaves.*')">
+                            Leave Requests
+                        </x-nav-link>
+                        <x-nav-link :href="route('employee.tasks.index')" :active="request()->routeIs('employee.tasks.*')">
+                            My Tasks
+                        </x-nav-link>
+                    </ul>
+                </div>
+
+            @else
+                <!-- Company/Admin Navigation -->
+                <div>
+                    <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Overview</div>
+                    <ul class="space-y-1">
+                        <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                            Dashboard
+                        </x-nav-link>
+                    </ul>
+                </div>
+
+                <div>
+                    <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Workflows</div>
+                    <ul class="space-y-1">
+                        <x-nav-link :href="route('job-applications.index')" :active="request()->routeIs('job-applications.*')">
+                            Job Applications
+                        </x-nav-link>
+
+                        <x-nav-link :href="route('job-vacancies.index')" :active="request()->routeIs('job-vacancies.*')">
+                            Job Vacancies
+                        </x-nav-link>
+
+                        @if ($hasCompany)
+                            <x-nav-link :href="route('my-company.show')" :active="request()->routeIs('my-company.*')">
+                                My Company
+                            </x-nav-link>
+
+                            <x-nav-link :href="route('departments.index')" :active="request()->routeIs('departments.*')">
+                                Departments
+                            </x-nav-link>
+
+                            <x-nav-link :href="route('company-employees.index')" :active="request()->routeIs('company-employees.*')">
+                                Employees
+                            </x-nav-link>
+                        @endif
+                    </ul>
+                </div>
+
+                @if ($isAdmin)
+                    <div>
+                        <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Administration</div>
+                        <ul class="space-y-1">
+                            <x-nav-link :href="route('companies.index')" :active="request()->routeIs('companies.*')">
+                                Companies
+                            </x-nav-link>
+
+                            <x-nav-link :href="route('job-categories.index')" :active="request()->routeIs('job-categories.*')">
+                                Categories
+                            </x-nav-link>
+
+                            <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
+                                Users
+                            </x-nav-link>
+                        </ul>
+                    </div>
+                @endif
+            @endif
+        </div>
+    </div>
+
+    <div class="border-t border-white/10 p-4">
+        <form method="POST" action="{{ route('logout') }}">
             @csrf
-            <x-nav-link class="text-red-500" :href="route('logout')"
-                onclick="event.preventDefault(); this.closest('form').submit();">
-                {{ __('Log Out') }}
-            </x-nav-link>
+            <button type="submit"
+                    class="flex w-full items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition hover:border-rose-400/40 hover:bg-rose-500/10 hover:text-rose-100">
+                Log Out
+            </button>
         </form>
-    </ul>
+    </div>
 </nav>

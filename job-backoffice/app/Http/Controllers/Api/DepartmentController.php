@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -13,8 +14,17 @@ class DepartmentController extends BaseApiController
     public function index(Request $request): JsonResponse
     {
         $query = Department::with(['company', 'manager'])->latest();
+        $actingUser = $request->user();
 
-        if ($request->filled('company_id')) {
+        if ($actingUser instanceof User && $actingUser->hasRole('company')) {
+            $companyId = (string) ($actingUser->company?->id ?? $actingUser->employee?->company_id ?? '');
+
+            if ($companyId === '') {
+                return $this->error('Validation failed.', ['company_id' => ['Company could not be resolved from token.']], 422);
+            }
+
+            $query->where('company_id', $companyId);
+        } elseif ($request->filled('company_id')) {
             $query->where('company_id', $request->string('company_id'));
         }
 
@@ -23,8 +33,18 @@ class DepartmentController extends BaseApiController
 
     public function store(Request $request): JsonResponse
     {
+        $actingUser = $request->user();
+        $resolvedCompanyId = $request->string('company_id')->toString();
+
+        if ($actingUser instanceof User && $actingUser->hasRole('company')) {
+            $resolvedCompanyId = (string) ($actingUser->company?->id ?? $actingUser->employee?->company_id ?? '');
+        } elseif ($resolvedCompanyId === '') {
+            if ($actingUser) {
+                $resolvedCompanyId = (string) $this->companyIdForUser($actingUser);
+            }
+        }
+
         $validator = Validator::make($request->all(), [
-            'company_id' => ['required', 'exists:companies,id'],
             'name' => ['required', 'string', 'max:255'],
             'code' => ['nullable', 'string', 'max:255'],
             'manager_employee_id' => ['nullable', 'exists:employees,id'],
@@ -34,8 +54,20 @@ class DepartmentController extends BaseApiController
             return $this->error('Validation failed.', $validator->errors(), 422);
         }
 
+        if ($resolvedCompanyId === '') {
+            return $this->error('Validation failed.', ['company_id' => ['Company could not be resolved from token.']], 422);
+        }
+
+        if ($request->filled('manager_employee_id')) {
+            $manager = Employee::find($request->string('manager_employee_id'));
+
+            if (! $manager || $manager->company_id !== $resolvedCompanyId) {
+                return $this->error('Validation failed.', ['manager_employee_id' => ['Manager must belong to the same company.']], 422);
+            }
+        }
+
         $department = Department::create([
-            'company_id' => $request->string('company_id'),
+            'company_id' => $resolvedCompanyId,
             'name' => $request->input('name'),
             'code' => $request->input('code'),
             'manager_employee_id' => $request->input('manager_employee_id'),
@@ -50,6 +82,16 @@ class DepartmentController extends BaseApiController
 
         if (! $department) {
             return $this->notFound('Department not found.');
+        }
+
+        $actingUser = $request->user();
+
+        if ($actingUser instanceof User && $actingUser->hasRole('company')) {
+            $companyId = (string) ($actingUser->company?->id ?? $actingUser->employee?->company_id ?? '');
+
+            if ($department->company_id !== $companyId) {
+                return $this->notFound('Department not found.');
+            }
         }
 
         $validator = Validator::make($request->all(), [

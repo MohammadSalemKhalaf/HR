@@ -23,14 +23,16 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
+        $this->call(RoleSeeder::class);
+
         User::firstOrCreate([
         'email' => 'admin@gmail.com',
         ],[
             'name' => 'admin',
             'password'=>Hash::make('12345678'),
-            'role'=>'admin',
+            'role_id' => User::roleIdFor('admin'),
             'email_verified_at'=>now(),
-        ]);
+        ])->forceFill(['role_id' => User::roleIdFor('admin')])->save();
 
         // Call EMS Seeder
         $this->call(EMSSeeder::class);
@@ -51,7 +53,7 @@ class DatabaseSeeder extends Seeder
         ],[
             'name'=> fake()->name(),
             'password'=> Hash::make('12345678'),
-            'role'=>'company_owner',
+            'role'=>'company',
             'email_verified_at'=>now()
 
         ]);

@@ -1,206 +1,197 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ $company->name }}
-        </h2>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <p class="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Company profile</p>
+                <h2 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">{{ $company->name }}</h2>
+                <p class="mt-2 text-sm text-slate-600">Overview of the company, vacancies, and applications.</p>
+            </div>
+
+            <div class="flex flex-wrap gap-3">
+                <a href="{{ auth()->user()->hasRole('admin') ? route('companies.edit', $company->id) : route('my-company.edit') }}" class="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">Edit</a>
+
+                @if(auth()->user()->hasRole('admin'))
+                    <form action="{{ route('companies.destroy', $company->id) }}" method="POST" onsubmit="return confirm('Archive this company?')">
+                        @csrf
+                        @method('DELETE')
+                        <button class="rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-600 transition hover:bg-rose-50">Archive</button>
+                    </form>
+                @endif
+            </div>
+        </div>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
-
-            <div class="bg-white shadow-sm rounded-xl p-6">
-
-             {{-- ✅ Success Alert --}}
-    @if(session('success'))
-        <div class="mb-6 bg-green-100 border border-green-300 text-green-700 px-4 py-3 rounded-lg">
-            {{ session('success') }}
+    <div class="space-y-6">
+        <div class="grid gap-4 md:grid-cols-4">
+            <div class="rounded-3xl border border-white/70 bg-white/85 p-5 shadow-lg shadow-slate-950/5 backdrop-blur">
+                <p class="text-sm text-slate-500">Address</p>
+                <p class="mt-2 font-semibold text-slate-900">{{ $company->address ?? '-' }}</p>
+            </div>
+            <div class="rounded-3xl border border-white/70 bg-white/85 p-5 shadow-lg shadow-slate-950/5 backdrop-blur">
+                <p class="text-sm text-slate-500">Industry</p>
+                <p class="mt-2 font-semibold text-slate-900">{{ $company->industry ?? '-' }}</p>
+            </div>
+            <div class="rounded-3xl border border-white/70 bg-white/85 p-5 shadow-lg shadow-slate-950/5 backdrop-blur">
+                <p class="text-sm text-slate-500">Owner</p>
+                <p class="mt-2 font-semibold text-slate-900">{{ $company->owner->name ?? '-' }}</p>
+            </div>
+            <div class="rounded-3xl border border-white/70 bg-white/85 p-5 shadow-lg shadow-slate-950/5 backdrop-blur">
+                <p class="text-sm text-slate-500">Website</p>
+                <p class="mt-2 font-semibold text-slate-900">
+                    @if($company->website)
+                        <a href="{{ $company->website }}" target="_blank" class="text-cyan-700 hover:underline">Open website</a>
+                    @else
+                        -
+                    @endif
+                </p>
+            </div>
         </div>
-    @endif
-                {{-- Top Actions --}}
-              <div class="flex justify-end items-start mb-6 space-x-2">
 
-    {{-- Edit --}}
-   <a href="{{ auth()->user()->role === 'admin'? route('companies.edit', $company->id): route('my-company.edit') }}"
-   class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
-    Edit
-</a>
-
-    @if(auth()->user()->role === 'admin')
-        <form action="{{ route('companies.destroy', $company->id) }}"
-              method="POST"
-              onsubmit="return confirm('Archive this company?')">
-            @csrf
-            @method('DELETE')
-
-            <button class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm">
-                Archive
-            </button>
-        </form>
-    @endif
-
-</div>
-                {{-- Company Info --}}
-                <div class="mb-8">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-3">
-                        Company Information
-                    </h3>
-
-                    <div class="grid grid-cols-2 gap-4 text-sm text-gray-700">
-                        <div>
-                            <strong>Address:</strong>
-                            <p>{{ $company->address ?? '-' }}</p>
-                        </div>
-
-                        <div>
-                            <strong>Industry:</strong>
-                            <p>{{ $company->industry ?? '-' }}</p>
-                        </div>
-
-                        <div>
-                            <strong>Owner:</strong>
-                            <p>{{ $company->owner->name ?? '-' }}</p>
-                        </div>
-
-                        <div>
-                            <strong>Website:</strong>
-                            @if($company->website)
-                                <a href="{{ $company->website }}" target="_blank"
-                                   class="text-indigo-600 hover:underline">
-                                    {{ $company->website }}
-                                </a>
-                            @else
-                                -
-                            @endif
-                        </div>
-                    </div>
+        <div x-data="{ tab: 'jobs' }" class="rounded-[2rem] border border-white/70 bg-white/85 shadow-lg shadow-slate-950/5 backdrop-blur overflow-hidden">
+            <div class="border-b border-slate-200 px-6 py-4">
+                <div class="flex flex-wrap gap-2">
+                    <button @click="tab='jobs'" :class="tab==='jobs' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'" class="rounded-full px-4 py-2 text-sm font-semibold transition">
+                        Jobs ({{ $company->jobVacancies->count() }})
+                    </button>
+                    <button @click="tab='applications'" :class="tab==='applications' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'" class="rounded-full px-4 py-2 text-sm font-semibold transition">
+                        Applications ({{ $company->jobApplications->count() }})
+                    </button>
                 </div>
+            </div>
 
-                {{-- Tabs --}}
-                <div x-data="{ tab: 'jobs' }">
-
-                    <div class="border-b mb-4">
-                        <nav class="flex space-x-8 text-sm font-medium">
-
-                            <button @click="tab='jobs'"
-                                    :class="tab==='jobs'
-                                    ? 'border-indigo-600 text-indigo-600'
-                                    : 'text-gray-500'"
-                                    class="pb-2 border-b-2">
-
-                                Jobs ({{ $company->jobVacancies->count() }})
-                            </button>
-
-                            <button @click="tab='applications'"
-                                    :class="tab==='applications'
-                                    ? 'border-indigo-600 text-indigo-600'
-                                    : 'text-gray-500'"
-                                    class="pb-2 border-b-2">
-
-                                Applications ({{ $company->jobApplications->count() }})
-                            </button>
-
-                        </nav>
-                    </div>
-
-                    {{-- ===================== --}}
-                    {{-- Jobs Tab --}}
-                    {{-- ===================== --}}
-                    <div x-show="tab==='jobs'" x-transition>
-
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr class="bg-gray-50 text-left text-gray-600">
-                                    <th class="py-2 px-3">Title</th>
-                                    <th class="py-2 px-3">Type</th>
-                                    <th class="py-2 px-3">Location</th>
-                                    <th class="py-2 px-3 text-right">Actions</th>
+            <div class="p-6">
+                <div x-show="tab==='jobs'" x-transition>
+                    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                        <table class="min-w-full divide-y divide-slate-200 text-sm">
+                            <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                <tr>
+                                    <th class="px-4 py-3">Title</th>
+                                    <th class="px-4 py-3">Type</th>
+                                    <th class="px-4 py-3">Location</th>
+                                    <th class="px-4 py-3 text-right">Actions</th>
                                 </tr>
                             </thead>
-
-                            <tbody class="divide-y">
+                            <tbody class="divide-y divide-slate-100">
                                 @forelse($company->jobVacancies as $job)
-                                    <tr>
-                                        <td class="py-2 px-3 font-medium">
-                                            {{ $job->title }}
-                                        </td>
-                                        <td class="py-2 px-3">
-                                            {{ $job->type }}
-                                        </td>
-                                        <td class="py-2 px-3">
-                                            {{ $job->location }}
-                                        </td>
-                                        <td class="py-2 px-3 text-right">
-                                            <a href="{{ route('job-vacancies.show', $job->id) }}"
-                                               class="text-indigo-600 hover:underline">
-                                                View
-                                            </a>
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="px-4 py-4 font-medium text-slate-900">{{ $job->title }}</td>
+                                        <td class="px-4 py-4 text-slate-600">{{ ucfirst($job->type) }}</td>
+                                        <td class="px-4 py-4 text-slate-600">{{ $job->location }}</td>
+                                        <td class="px-4 py-4 text-right">
+                                            <a href="{{ route('job-vacancies.show', $job->id) }}" class="font-semibold text-cyan-700 hover:text-cyan-800">View</a>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="text-center py-6 text-gray-500">
-                                            No jobs found.
-                                        </td>
+                                        <td colspan="4" class="px-4 py-10 text-center text-slate-500">No jobs found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
                         </table>
-
                     </div>
+                </div>
 
-                    {{-- ===================== --}}
-                    {{-- Applications Tab --}}
-                    {{-- ===================== --}}
-                    <div x-show="tab==='applications'" x-cloak x-transition>
-
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr class="bg-gray-50 text-left text-gray-600">
-                                    <th class="py-2 px-3">Applicant</th>
-                                    <th class="py-2 px-3">Vacancy</th>
-                                    <th class="py-2 px-3">Status</th>
-                                    <th class="py-2 px-3">Score</th>
+                <div x-show="tab==='applications'" x-cloak x-transition>
+                    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                        <table class="min-w-full divide-y divide-slate-200 text-sm">
+                            <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                <tr>
+                                    <th class="px-4 py-3">Applicant</th>
+                                    <th class="px-4 py-3">Vacancy</th>
+                                    <th class="px-4 py-3">Status</th>
+                                    <th class="px-4 py-3 text-right">Score</th>
                                 </tr>
                             </thead>
-
-                            <tbody class="divide-y">
+                            <tbody class="divide-y divide-slate-100">
                                 @forelse($company->jobApplications as $app)
-                                    <tr>
-                                        <td class="py-2 px-3">
-                                            {{ $app->user->name ?? '-' }}
-                                        </td>
-
-                                        <td class="py-2 px-3">
-                                            {{ $app->jobVacancy->title ?? '-' }}
-                                        </td>
-
-                                        <td class="py-2 px-3">
-                                            <span class="px-2 py-1 text-xs rounded
-                                                {{ $app->status === 'accepted' ? 'bg-green-100 text-green-700' :
-                                                   ($app->status === 'rejected' ? 'bg-red-100 text-red-700' :
-                                                   'bg-gray-100 text-gray-700') }}">
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="px-4 py-4 font-medium text-slate-900">{{ $app->user->name ?? '-' }}</td>
+                                        <td class="px-4 py-4 text-slate-600">{{ $app->jobVacancy->title ?? '-' }}</td>
+                                        <td class="px-4 py-4">
+                                            <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $app->status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : ($app->status === 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700') }}">
                                                 {{ ucfirst($app->status) }}
                                             </span>
                                         </td>
-
-                                        <td class="py-2 px-3">
-                                            {{ $app->aiGeneratedScore ?? '-' }}
-                                        </td>
+                                        <td class="px-4 py-4 text-right text-slate-600">{{ $app->aiGeneratedScore ?? '-' }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="text-center py-6 text-gray-500">
-                                            No applications found.
-                                        </td>
+                                        <td colspan="4" class="px-4 py-10 text-center text-slate-500">No applications found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
                         </table>
-
                     </div>
-
                 </div>
+            </div>
+        </div>
 
+        <!-- Today Activity -->
+        <div class="rounded-[2rem] border border-white/70 bg-white/85 shadow-lg shadow-slate-950/5 backdrop-blur overflow-hidden">
+            <div class="border-b border-slate-200 px-6 py-4">
+                <h3 class="text-lg font-semibold text-slate-900">Today Activity</h3>
+            </div>
+
+            <div class="p-6">
+                @if(isset($activities) && $activities->count() > 0)
+                    <ul class="space-y-4">
+                        @foreach($activities as $act)
+                            <li class="flex items-start gap-4">
+                                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700">
+                                    @switch($act->action)
+                                        @case('department.created')
+                                        @case('department.updated')
+                                        @case('department.deleted')
+                                            📁
+                                            @break
+                                        @case('department.manager_assigned')
+                                            👤
+                                            @break
+                                        @case('employee.created')
+                                        @case('employee.transferred')
+                                        @case('employee.updated')
+                                            👥
+                                            @break
+                                        @case('employee.promoted')
+                                            ⭐
+                                            @break
+                                        @case('employee.downgraded')
+                                            🔻
+                                            @break
+                                        @case('leave.requested')
+                                            📅
+                                            @break
+                                        @case('leave.approved')
+                                            ✅
+                                            @break
+                                        @case('leave.rejected')
+                                            ❌
+                                            @break
+                                        @case('attendance.check_in')
+                                            ⏰
+                                            @break
+                                        @case('attendance.check_out')
+                                            🕔
+                                            @break
+                                        default
+                                            •
+                                    @endswitch
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <div class="text-sm font-semibold text-slate-900">{{ ucwords(str_replace(['.','_'], ' ', $act->action)) }}</div>
+                                            <div class="mt-1 text-sm text-slate-600">{{ $act->description ?? '-' }}</div>
+                                        </div>
+                                        <div class="text-xs text-slate-500">{{ $act->created_at->diffForHumans() }} @if($act->actor) · {{ $act->actor->name }} @endif</div>
+                                    </div>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                @else
+                    <div class="text-center text-slate-500">No recent activity.</div>
+                @endif
             </div>
         </div>
     </div>

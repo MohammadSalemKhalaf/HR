@@ -1,149 +1,89 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Create Job Vacancy
-        </h2>
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <p class="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Operations</p>
+                <h2 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">Create Job Vacancy</h2>
+                <p class="mt-2 text-sm text-slate-600">Post a vacancy with company, category, and salary information.</p>
+            </div>
+
+            <a href="{{ route('job-vacancies.index') }}" class="inline-flex items-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                Back
+            </a>
+        </div>
     </x-slot>
 
-    <div class="py-8">
-        <div class="max-w-3xl mx-auto px-6">
+    <div class="mx-auto max-w-3xl">
+        <div class="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-lg shadow-slate-950/5 backdrop-blur sm:p-8">
+            <form action="{{ route('job-vacancies.store') }}" method="POST" class="space-y-6">
+                @csrf
 
-            <div class="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
-
-                <div class="bg-gray-50 px-6 py-5 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-700">
-                        Job Vacancy Details
-                    </h3>
-                    <p class="text-sm text-gray-500">
-                        Enter the job vacancy details
-                    </p>
-                </div>
-
-                <form action="{{ route('job-vacancies.store') }}" method="POST" class="p-6 space-y-6">
-                    @csrf
-
-                    {{-- Title --}}
+                <div class="grid gap-6 md:grid-cols-2">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Title *
-                        </label>
-                        <input type="text" name="title"
-                               value="{{ old('title') }}"
-                               class="w-full px-4 py-2.5 rounded-lg border 
-                               {{ $errors->has('title') ? 'border-red-400 bg-red-50' : 'border-gray-300' }}">
-                        @error('title')
-                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                        @enderror
+                        <label class="mb-2 block text-sm font-semibold text-slate-700">Title *</label>
+                        <input type="text" name="title" value="{{ old('title') }}" class="w-full rounded-2xl border {{ $errors->has('title') ? 'border-rose-300 bg-rose-50' : 'border-slate-300 bg-white' }} px-4 py-3 text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100">
+                        @error('title')<p class="mt-2 text-sm text-rose-600">{{ $message }}</p>@enderror
                     </div>
 
-                    {{-- Location --}}
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Location *
-                        </label>
-                        <input type="text" name="location"
-                               value="{{ old('location') }}"
-                               class="w-full px-4 py-2.5 rounded-lg border 
-                               {{ $errors->has('location') ? 'border-red-400 bg-red-50' : 'border-gray-300' }}">
-                        @error('location')
-                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                        @enderror
+                        <label class="mb-2 block text-sm font-semibold text-slate-700">Location *</label>
+                        <input type="text" name="location" value="{{ old('location') }}" class="w-full rounded-2xl border {{ $errors->has('location') ? 'border-rose-300 bg-rose-50' : 'border-slate-300 bg-white' }} px-4 py-3 text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100">
+                        @error('location')<p class="mt-2 text-sm text-rose-600">{{ $message }}</p>@enderror
                     </div>
 
-                    {{-- Salary --}}
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Expected Salary (USD) *
-                        </label>
-                        <input type="number" step="0.01" name="salary"
-                               value="{{ old('salary') }}"
-                               class="w-full px-4 py-2.5 rounded-lg border 
-                               {{ $errors->has('salary') ? 'border-red-400 bg-red-50' : 'border-gray-300' }}">
-                        @error('salary')
-                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                        @enderror
+                        <label class="mb-2 block text-sm font-semibold text-slate-700">Salary *</label>
+                        <input type="number" step="0.01" name="salary" value="{{ old('salary') }}" class="w-full rounded-2xl border {{ $errors->has('salary') ? 'border-rose-300 bg-rose-50' : 'border-slate-300 bg-white' }} px-4 py-3 text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100">
+                        @error('salary')<p class="mt-2 text-sm text-rose-600">{{ $message }}</p>@enderror
                     </div>
 
-                    {{-- Type --}}
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Type *
-                        </label>
-                        <select name="type"
-                                class="w-full px-4 py-2.5 rounded-lg border border-gray-300">
+                        <label class="mb-2 block text-sm font-semibold text-slate-700">Type *</label>
+                        <select name="type" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100">
                             <option value="">Select Type</option>
                             @foreach(['full-time','contract','hybrid','remote'] as $type)
-                                <option value="{{ $type }}"
-                                    {{ old('type') == $type ? 'selected' : '' }}>
-                                    {{ $type }}
-                                </option>
+                                <option value="{{ $type }}" {{ old('type') == $type ? 'selected' : '' }}>{{ ucfirst(str_replace('-', ' ', $type)) }}</option>
                             @endforeach
                         </select>
+                        @error('type')<p class="mt-2 text-sm text-rose-600">{{ $message }}</p>@enderror
                     </div>
 
-                    {{-- Company --}}
+                    @unless(auth()->user()?->hasRole('company'))
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Company *
-                        </label>
-                        <select name="companyId"
-                                class="w-full px-4 py-2.5 rounded-lg border border-gray-300">
+                        <label class="mb-2 block text-sm font-semibold text-slate-700">Company *</label>
+                        <select name="companyId" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100">
                             <option value="">Select Company</option>
                             @foreach($companies as $company)
-                                <option value="{{ $company->id }}"
-                                    {{ old('companyId') == $company->id ? 'selected' : '' }}>
-                                    {{ $company->name }}
-                                </option>
+                                <option value="{{ $company->id }}" {{ old('companyId') == $company->id ? 'selected' : '' }}>{{ $company->name }}</option>
                             @endforeach
                         </select>
+                        @error('companyId')<p class="mt-2 text-sm text-rose-600">{{ $message }}</p>@enderror
                     </div>
+                    @endunless
 
-                    {{-- Category --}}
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Job Category *
-                        </label>
-                        <select name="categoryId"
-                                class="w-full px-4 py-2.5 rounded-lg border border-gray-300">
+                        <label class="mb-2 block text-sm font-semibold text-slate-700">Category *</label>
+                        <select name="categoryId" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100">
                             <option value="">Select Category</option>
                             @foreach($categories as $category)
-                                <option value="{{ $category->id }}"
-                                    {{ old('categoryId') == $category->id ? 'selected' : '' }}>
-                                    {{ $category->name }}
-                                </option>
+                                <option value="{{ $category->id }}" {{ old('categoryId') == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
                             @endforeach
                         </select>
+                        @error('categoryId')<p class="mt-2 text-sm text-rose-600">{{ $message }}</p>@enderror
                     </div>
+                </div>
 
-                    {{-- Description --}}
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Job Description *
-                        </label>
-                        <textarea name="description" rows="4"
-                                  class="w-full px-4 py-2.5 rounded-lg border 
-                                  {{ $errors->has('description') ? 'border-red-400 bg-red-50' : 'border-gray-300' }}">{{ old('description') }}</textarea>
-                        @error('description')
-                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">Job Description *</label>
+                    <textarea name="description" rows="5" class="w-full rounded-3xl border {{ $errors->has('description') ? 'border-rose-300 bg-rose-50' : 'border-slate-300 bg-white' }} px-4 py-3 text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100">{{ old('description') }}</textarea>
+                    @error('description')<p class="mt-2 text-sm text-rose-600">{{ $message }}</p>@enderror
+                </div>
 
-                    {{-- Buttons --}}
-                    <div class="flex justify-end gap-3 pt-6 border-t">
-                        <a href="{{ route('job-vacancies.index') }}"
-                           class="px-5 py-2 border rounded-lg text-gray-600">
-                            Cancel
-                        </a>
-
-                        <button type="submit"
-                                class="px-6 py-2 bg-blue-600 text-white rounded-lg">
-                            Save Job Vacancy
-                        </button>
-                    </div>
-
-                </form>
-
-            </div>
+                <div class="flex flex-wrap justify-end gap-3 border-t border-slate-200 pt-6">
+                    <a href="{{ route('job-vacancies.index') }}" class="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Cancel</a>
+                    <button type="submit" class="rounded-full bg-cyan-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-500">Save Job Vacancy</button>
+                </div>
+            </form>
         </div>
     </div>
 </x-app-layout>

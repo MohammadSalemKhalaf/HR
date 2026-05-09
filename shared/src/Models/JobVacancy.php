@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -41,22 +43,23 @@ class JobVacancy extends Model
         ];
     }
 
-    public function jobcategory()
+    public function jobcategory(): BelongsTo
     {
         return $this->belongsTo(JobCategory::class,'categoryId','id');
     }
 
-    public function company()
+    public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class,'companyId','id');
     }
 
-    public function jobApplication(){
+    public function jobApplication(): HasMany
+    {
         return $this->hasMany(JobApplication::class,'jobVacancyId','id');
     }
 
-    public function jobApplications()
-{
-    return $this->hasMany(JobApplication::class, 'jobVacancyId', 'id');
-}
+    public function jobApplications(): HasMany
+    {
+        return $this->hasMany(JobApplication::class, 'jobVacancyId', 'id');
+    }
 }

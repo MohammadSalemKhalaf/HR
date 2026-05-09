@@ -1,171 +1,90 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Job Applications
-            </h2>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <p class="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Operations</p>
+                <h2 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">Job Applications</h2>
+                <p class="mt-2 text-sm text-slate-600">Review applications and manage archived records.</p>
+            </div>
 
             @if(request()->boolean('archived'))
-                <a href="{{ route('job-applications.index') }}"
-                   class="px-4 py-2 bg-black text-white text-sm rounded-md hover:bg-gray-800">
-                    Active Job Applications
+                <a href="{{ route('job-applications.index') }}" class="inline-flex items-center rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">
+                    Active Applications
                 </a>
             @else
-                <a href="{{ route('job-applications.index', ['archived' => 'true']) }}"
-                   class="px-4 py-2 bg-black text-white text-sm rounded-md hover:bg-gray-800">
-                    Archived Job Applications
+                <a href="{{ route('job-applications.index', ['archived' => 'true']) }}" class="inline-flex items-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                    Archived Applications
                 </a>
             @endif
         </div>
     </x-slot>
 
-    {{-- Success Message --}}
-    @if(session('success'))
-        <div id="success-message"
-             class="bg-green-100 text-green-700 p-4 rounded m-6 transition-opacity duration-500">
-            {{ session('success') }}
+    <div class="rounded-[2rem] border border-white/70 bg-white/85 shadow-lg shadow-slate-950/5 backdrop-blur overflow-hidden">
+        <div class="border-b border-slate-200 px-6 py-4">
+            <p class="text-sm font-medium text-slate-500">Applications List</p>
+            <h3 class="text-lg font-semibold text-slate-900">Review and action records</h3>
         </div>
-    @endif
 
-    <div class="p-6">
-
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-200">
-
-                <thead class="bg-gray-50">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                            Applicant Name
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                            Position (Job Vacancy)
-                        </th>
-                        @if (auth()->user()->role=='admin')
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                            Company
-                        </th>
+                        <th class="px-6 py-3 text-left">Applicant Name</th>
+                        <th class="px-6 py-3 text-left">Position</th>
+                        @if (auth()->user()->hasRole('admin'))
+                            <th class="px-6 py-3 text-left">Company</th>
                         @endif
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                            Status
-                        </th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-                            Actions
-                        </th>
+                        <th class="px-6 py-3 text-left">Status</th>
+                        <th class="px-6 py-3 text-right">Actions</th>
                     </tr>
                 </thead>
 
-                <tbody class="divide-y divide-gray-100">
-
+                <tbody class="divide-y divide-slate-100 bg-white text-sm">
                     @forelse($jobApplications as $application)
-                        <tr class="hover:bg-gray-50 transition">
-
-                            {{-- Applicant Name --}}
-                            <td class="px-6 py-4 font-medium">
-                                <a href="{{ route('job-applications.show', $application->id) }}"
-                                   class="text-indigo-600 hover:underline">
-                                    {{ $application->user?->name ?? 'N/A' }}
-                                </a>
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-6 py-4 font-medium text-slate-900">
+                                <a href="{{ route('job-applications.show', $application->id) }}" class="hover:text-cyan-700 hover:underline">{{ $application->user?->name ?? 'N/A' }}</a>
                             </td>
-
-                            {{-- Job Vacancy Title --}}
-                            <td class="px-6 py-4 text-gray-700">
-                                {{ $application->jobVacancy?->title ?? 'N/A' }}
-                            </td>
-
-                            {{-- Company --}}
-                            @if (auth()->user()->role=='admin')
-                            <td class="px-6 py-4 text-gray-700">
-                             {{ $application->jobVacancy?->company?->name ?? 'N/A' }}
-                            </td>
+                            <td class="px-6 py-4 text-slate-600">{{ $application->jobVacancy?->title ?? 'N/A' }}</td>
+                            @if (auth()->user()->hasRole('admin'))
+                                <td class="px-6 py-4 text-slate-600">{{ $application->jobVacancy?->company?->name ?? 'N/A' }}</td>
                             @endif
-
-
-                            {{-- Status Badge --}}
                             <td class="px-6 py-4">
-                                <span class="px-3 py-1 text-xs font-semibold rounded-full
-                                    @if($application->status === 'accepted')
-                                        bg-green-100 text-green-700
-                                    @elseif($application->status === 'rejected')
-                                        bg-red-100 text-red-700
-                                    @elseif($application->status === 'pending')
-                                        bg-yellow-100 text-yellow-700
-                                    @else
-                                        bg-gray-100 text-gray-700
-                                    @endif">
+                                <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $application->status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : ($application->status === 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700') }}">
                                     {{ ucfirst($application->status) }}
                                 </span>
                             </td>
-
-                            {{-- Actions --}}
-                            <td class="px-6 py-4 text-right space-x-4">
-
-                                @if(request()->boolean('archived'))
-
-                                    {{-- Restore --}}
-                                    <form action="{{ route('job-applications.restore', $application->id) }}"
-                                          method="POST"
-                                          class="inline-block">
-                                        @csrf
-                                        @method('PUT')
-
-                                        <button type="submit"
-                                                class="text-green-600 hover:text-green-800 font-medium">
-                                            ♻ Restore
-                                        </button>
-                                    </form>
-
-                                @else
-
-                                    {{-- Edit --}}
-                                    <a href="{{ route('job-applications.edit', $application->id) }}"
-                                       class="text-yellow-600 hover:text-yellow-800 font-medium">
-                                        ✏ Edit
-                                    </a>
-
-                                    {{-- Archive --}}
-                                    <form action="{{ route('job-applications.destroy', $application->id) }}"
-                                          method="POST"
-                                          class="inline-block">
-                                        @csrf
-                                        @method('DELETE')
-
-                                        <button type="submit"
-                                                class="text-red-600 hover:text-red-800 font-medium">
-                                            🗑 Archive
-                                        </button>
-                                    </form>
-
-                                @endif
-
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end gap-3">
+                                    @if(request()->boolean('archived'))
+                                        <form action="{{ route('job-applications.restore', $application->id) }}" method="POST">
+                                            @csrf
+                                            @method('PUT')
+                                            <button type="submit" class="font-semibold text-emerald-600 hover:text-emerald-700">Restore</button>
+                                        </form>
+                                    @else
+                                        <a href="{{ route('job-applications.edit', $application->id) }}" class="font-semibold text-cyan-700 hover:text-cyan-800">Edit</a>
+                                        <form action="{{ route('job-applications.destroy', $application->id) }}" method="POST">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="font-semibold text-rose-600 hover:text-rose-700">Archive</button>
+                                        </form>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
-
                     @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-6 text-center text-gray-500">
-                                No job applications found.
-                            </td>
+                            <td colspan="{{ auth()->user()->hasRole('admin') ? 5 : 4 }}" class="px-6 py-12 text-center text-slate-500">No job applications found.</td>
                         </tr>
                     @endforelse
-
                 </tbody>
             </table>
         </div>
 
-        {{-- Pagination --}}
-        <div class="mt-6">
+        <div class="border-t border-slate-200 px-6 py-4">
             {{ $jobApplications->withQueryString()->links() }}
         </div>
     </div>
-
-    <script>
-        setTimeout(function() {
-            const message = document.getElementById('success-message');
-            if (message) {
-                message.style.opacity = '0';
-                setTimeout(() => message.remove(), 500);
-            }
-        }, 3000);
-    </script>
 
 </x-app-layout>

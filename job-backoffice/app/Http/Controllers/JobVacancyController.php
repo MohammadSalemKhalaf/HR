@@ -21,11 +21,14 @@ class JobVacancyController extends Controller
 public function index(Request $request)
 {
     $query = JobVacancy::with(['company', 'jobcategory']);
+    /** @var \App\Models\User $user */
+    $user = Auth::user();
+    $companyId = $user->company?->id ?? $user->employee?->company_id;
 
-    // إذا Company Owner → اعرض بس وظائف شركته
-    if (Auth::user()->role === 'company_owner') {
-        $query->whereHas('company', function ($q) {
-            $q->where('ownerId', Auth::id());
+    // If user is linked to a company → show only their company's jobs
+    if ($companyId) {
+        $query->whereHas('company', function ($q) use ($companyId) {
+            $q->where('id', $companyId);
         });
     }
 
@@ -56,8 +59,20 @@ public function create()
      */
   public function store(JobVacancyCreateRequest $request)
 {
-    
-    JobVacancy::create($request->validated());
+
+    $data = $request->validated();
+
+    /** @var \App\Models\User $user */
+    $user = Auth::user();
+
+    // If the authenticated user is a company (or linked to one), force the vacancy to use that company
+    $resolvedCompanyId = $user->company?->id ?? $user->employee?->company_id;
+
+    if ($user && $user->hasRole('company') && $resolvedCompanyId) {
+        $data['companyId'] = $resolvedCompanyId;
+    }
+
+    JobVacancy::create($data);
 
     return redirect()
         ->route('job-vacancies.index')

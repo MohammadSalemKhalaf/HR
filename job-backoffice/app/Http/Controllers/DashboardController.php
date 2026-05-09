@@ -10,11 +10,16 @@ use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
-    
+
   public function index()
 {
-    if (auth::user()->role == 'admin') {
+    /** @var \App\Models\User $user */
+    $user = Auth::user();
+
+    if ($user->hasRole('admin')) {
         $data = $this->admin();
+    } elseif ($user->hasRole('job_seeker')) {
+        $data = $this->jobseeker();
     } else {
         $data = $this->companydashboard();
     }
@@ -25,7 +30,9 @@ class DashboardController extends Controller
   private function admin()
 {
     $activeUsers = User::where('last_login_at', '>=', now()->subDays(30))
-        ->where('role', 'job_seeker')
+        ->whereHas('assignedRole', function ($query) {
+            $query->where('slug', 'job_seeker');
+        })
         ->count();
 
     $totalJobs = JobVacancy::whereNull('deleted_at')->count();
@@ -63,26 +70,34 @@ class DashboardController extends Controller
 
   private function companydashboard()
 {
-    $userId = auth::id();
+    /** @var \App\Models\User $user */
+    $user = Auth::user();
+    $companyId = $user->company?->id ?? $user->employee?->company_id;
 
-    // Active users 
-    $activeUsers = User::where('role', 'job_seeker')
+    if (! $companyId) {
+        abort(403);
+    }
+
+    // Active users
+    $activeUsers = User::whereHas('assignedRole', function ($query) {
+            $query->where('slug', 'job_seeker');
+        })
         ->where('last_login_at', '>=', now()->subDays(30))
-        ->whereHas('jobApplications.jobvacancy.company', function ($q) use ($userId) {
-            $q->where('ownerId', $userId);
+        ->whereHas('jobApplications.jobvacancy.company', function ($q) use ($companyId) {
+            $q->where('id', $companyId);
         })
         ->count();
 
-    // Total jobs 
-    $totalJobs = JobVacancy::whereHas('company', function ($q) use ($userId) {
-            $q->where('ownerId', $userId);
+    // Total jobs
+    $totalJobs = JobVacancy::whereHas('company', function ($q) use ($companyId) {
+            $q->where('id', $companyId);
         })
         ->whereNull('deleted_at')
         ->count();
 
-    // Total applications 
-    $totalApplications = JobApplication::whereHas('jobvacancy.company', function ($q) use ($userId) {
-            $q->where('ownerId', $userId);
+    // Total applications
+    $totalApplications = JobApplication::whereHas('jobvacancy.company', function ($q) use ($companyId) {
+            $q->where('id', $companyId);
         })
         ->whereNull('deleted_at')
         ->count();
@@ -93,20 +108,20 @@ class DashboardController extends Controller
         'totalApplications' => $totalApplications,
     ];
 
-    // Most applied jobs 
+    // Most applied jobs
     $mostAppliedJobs = JobVacancy::withCount(['jobApplications as totalCount'])
-        ->whereHas('company', function ($q) use ($userId) {
-            $q->where('ownerId', $userId);
+        ->whereHas('company', function ($q) use ($companyId) {
+            $q->where('id', $companyId);
         })
         ->whereNull('deleted_at')
         ->orderByDesc('totalCount')
         ->limit(5)
         ->get();
 
-    // Conversion rate 
+    // Conversion rate
     $conversionRates = JobVacancy::withCount(['jobApplications as totalCount'])
-        ->whereHas('company', function ($q) use ($userId) {
-            $q->where('ownerId', $userId);
+        ->whereHas('company', function ($q) use ($companyId) {
+            $q->where('id', $companyId);
         })
         ->whereNull('deleted_at')
         ->limit(5)
@@ -124,6 +139,26 @@ class DashboardController extends Controller
         'conversionRates' => $conversionRates,
     ];
 }
-        
+
+  private function jobseeker()
+{
+    /** @var \App\Models\User $user */
+    $user = Auth::user();
+
+    $totalApplications = $user->jobApplications()->whereNull('deleted_at')->count();
+
+    $analytics = [
+        'activeUsers' => 1,
+        'totalJobs' => 0,
+        'totalApplications' => $totalApplications,
+    ];
+
+    return [
+        'analytics' => $analytics,
+        'mostAppliedJobs' => collect(),
+        'conversionRates' => collect(),
+    ];
+}
+
 }
 

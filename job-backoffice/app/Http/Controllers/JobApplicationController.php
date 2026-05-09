@@ -1,10 +1,9 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Models\User;
 use App\Models\JobApplication;
 use Illuminate\Support\Facades\Auth;
-
-
 use Illuminate\Http\Request;
 
 class JobApplicationController extends Controller
@@ -16,11 +15,16 @@ class JobApplicationController extends Controller
 {
     $query = JobApplication::with(['jobvacancy.company', 'user'])
                 ->latest();
+    $user = Auth::user();
+    if (!$user instanceof User) {
+        abort(403);
+    }
+    $companyId = $user->company?->id ?? $user->employee?->company_id;
 
-    if (Auth::user()->role === 'company_owner') {
+    if ($companyId) {
 
-        $query->whereHas('jobvacancy.company', function ($q) {
-            $q->where('ownerId', Auth::id());
+        $query->whereHas('jobvacancy.company', function ($q) use ($companyId) {
+            $q->where('id', $companyId);
         });
 
     }
@@ -33,7 +37,7 @@ class JobApplicationController extends Controller
 
     return view('jobapplication.index', compact('jobApplications'));
 }
-    
+
 
 
    public function show(string $id)
@@ -88,7 +92,7 @@ public function edit(string $id)
         $jobApplication = JobApplication::findOrFail($id);
         $jobApplication->delete();
         return redirect()->route('job-applications.index')->with('success','Job Application Archived Successfully');
-       
+
     }
 
       public function restore(string $id)

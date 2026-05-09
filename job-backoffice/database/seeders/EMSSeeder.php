@@ -6,6 +6,8 @@ use App\Models\User;
 use App\Models\Company;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\JobCategory;
+use App\Models\JobVacancy;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -15,25 +17,27 @@ class EMSSeeder extends Seeder
     {
         // Create default admin user
         $admin = User::firstOrCreate(
-            ['email' => 'admin@ems.local'],
+            ['email' => 'admin@gmail.com'],
             [
                 'name' => 'Admin User',
-                'password' => Hash::make('Admin@123'),
-                'role' => 'admin',
+                'password' => Hash::make('12345678'),
+                'role_id' => User::roleIdFor('admin'),
                 'email_verified_at' => now(),
             ]
         );
+        $admin->forceFill(['role_id' => User::roleIdFor('admin')])->save();
 
-        // Create company owner user
+        // Create company user (company account)
         $owner = User::firstOrCreate(
             ['email' => 'owner@acme.local'],
             [
                 'name' => 'Company Owner',
                 'password' => Hash::make('Owner@123'),
-                'role' => 'company_owner',
+                'role_id' => User::roleIdFor('company'),
                 'email_verified_at' => now(),
             ]
         );
+        $owner->forceFill(['role_id' => User::roleIdFor('company')])->save();
 
         // Create company
         $company = Company::firstOrCreate(
@@ -46,16 +50,35 @@ class EMSSeeder extends Seeder
             ]
         );
 
+        $category = JobCategory::firstOrCreate(
+            ['name' => 'Backend Development']
+        );
+
+        JobVacancy::firstOrCreate(
+            [
+                'title' => 'Backend Engineer',
+                'companyId' => $company->id,
+            ],
+            [
+                'description' => 'Build and maintain EMS backend APIs.',
+                'location' => 'Remote',
+                'salary' => '120000',
+                'type' => 'full-time',
+                'categoryId' => $category->id,
+            ]
+        );
+
         // Create HR user
         $hr = User::firstOrCreate(
             ['email' => 'hr@acme.local'],
             [
                 'name' => 'HR Manager',
                 'password' => Hash::make('HR@123'),
-                'role' => 'job_seeker', // Using job_seeker as a placeholder; actual role can be customized
+                'role_id' => User::roleIdFor('manager'),
                 'email_verified_at' => now(),
             ]
         );
+        $hr->forceFill(['role_id' => User::roleIdFor('manager')])->save();
 
         // Create HR Employee record
         $hrEmployee = Employee::firstOrCreate(
@@ -86,10 +109,11 @@ class EMSSeeder extends Seeder
             [
                 'name' => 'Engineering Manager',
                 'password' => Hash::make('Manager@123'),
-                'role' => 'job_seeker',
+                'role_id' => User::roleIdFor('manager'),
                 'email_verified_at' => now(),
             ]
         );
+        $manager->forceFill(['role_id' => User::roleIdFor('manager')])->save();
 
         // Create manager Employee record
         $managerEmployee = Employee::firstOrCreate(
@@ -111,12 +135,13 @@ class EMSSeeder extends Seeder
         $employee = User::firstOrCreate(
             ['email' => 'employee@acme.local'],
             [
-                'name' => 'John Employee',
-                'password' => Hash::make('Employee@123'),
-                'role' => 'job_seeker',
+                'name' => 'Employee User',
+                'password' => Hash::make('12345678'),
+                'role_id' => User::roleIdFor('employee'),
                 'email_verified_at' => now(),
             ]
         );
+        $employee->forceFill(['role_id' => User::roleIdFor('employee')])->save();
 
         // Create employee record
         Employee::firstOrCreate(
@@ -138,9 +163,10 @@ class EMSSeeder extends Seeder
             [
                 'name' => 'Job Seeker',
                 'password' => Hash::make('Seeker@123'),
-                'role' => 'job_seeker',
+                'role_id' => User::roleIdFor('job_seeker'),
                 'email_verified_at' => now(),
             ]
         );
+        $seeker->forceFill(['role_id' => User::roleIdFor('job_seeker')])->save();
     }
 }

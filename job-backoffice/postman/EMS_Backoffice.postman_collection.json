@@ -1,55 +1,35 @@
-{
+﻿{
   "info": {
     "_postman_id": "ems-backoffice-collection",
     "name": "EMS Backoffice",
     "description": "EMS Backoffice API workflows for job seekers, admins, companies, employees, recruitment, and leaves.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "var location = (pm.execution.location || []).join(' > ');",
+          "var tokenVar = '';",
+          "if (location.indexOf('Platform Admin') !== -1) { tokenVar = 'admin_token'; }",
+          "else if (location.indexOf('Company Management') !== -1) { tokenVar = 'company_token'; }",
+          "else if (location.indexOf('Employee Self Service') !== -1) { tokenVar = 'employee_token'; }",
+          "else if (location.indexOf('Job Seeker') !== -1) { tokenVar = 'seeker_token'; }",
+          "if (tokenVar) {",
+          "  var token = pm.environment.get(tokenVar);",
+          "  if (token) { pm.request.headers.upsert({ key: 'Authorization', value: 'Bearer ' + token }); }",
+          "}"
+        ]
+      }
+    }
+  ],
   "item": [
     {
       "name": "Public Job Seeker Auth",
-      "description": "Public registration is only for job seekers.",
+      "description": "Login and current user lookup for the seeded job seeker account.",
       "item": [
-        {
-          "name": "Register Job Seeker",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/auth/register",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth",
-                "register"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"John Job Seeker\",\n  \"email\": \"seeker{{$timestamp}}@example.com\",\n  \"password\": \"Password@123\",\n  \"role\": \"job_seeker\"\n}"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
-                  "pm.test('Register job seeker', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
-                  "if (json.data && json.data.token) { pm.environment.set('seeker_token', json.data.token); pm.environment.set('token', json.data.token); }",
-                  "if (json.data && json.data.user_id) { pm.environment.set('seeker_user_id', json.data.user_id); pm.environment.set('user_id', json.data.user_id); }",
-                  "if (json.data && json.data.role) { pm.environment.set('role', json.data.role); }"
-                ]
-              }
-            }
-          ]
-        },
         {
           "name": "Login Job Seeker",
           "request": {
@@ -61,11 +41,12 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/auth/login",
+              "raw": "{{base_url}}/api/auth/login",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "auth",
                 "login"
               ]
@@ -95,17 +76,14 @@
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{seeker_token}}"
-              }
             ],
             "url": {
-              "raw": "{{base_url}}/me",
+              "raw": "{{base_url}}/api/me",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "me"
               ]
             }
@@ -124,25 +102,22 @@
       ]
     },
     {
-      "name": "Job Seeker",
-      "description": "Job seeker vacancy discovery and application flow.",
+      "name": "Job Seeker Flow",
+      "description": "Vacancy discovery, application submission, and CV upload.",
       "item": [
         {
           "name": "Get All Vacancies",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{seeker_token}}"
-              }
             ],
             "url": {
-              "raw": "{{base_url}}/vacancies",
+              "raw": "{{base_url}}/api/vacancies",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "vacancies"
               ]
             }
@@ -152,7 +127,9 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('Get all vacancies', function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Get all vacancies', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (Array.isArray(json.data) && json.data.length > 0) { pm.environment.set('vacancy_id', json.data[0].id); if (json.data[0].company && json.data[0].company.id) { pm.environment.set('company_id', json.data[0].company.id); } else if (json.data[0].companyId) { pm.environment.set('company_id', json.data[0].companyId); } }"
                 ]
               }
             }
@@ -163,13 +140,9 @@
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{seeker_token}}"
-              }
             ],
             "url": {
-              "raw": "{{base_url}}/vacancies?company_id={{company_id}}",
+              "raw": "{{base_url}}/api/vacancies?company_id={{company_id}}",
               "query": [
                 {
                   "key": "company_id",
@@ -181,6 +154,7 @@
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "vacancies"
               ]
             }
@@ -198,20 +172,17 @@
         },
         {
           "name": "Apply To Vacancy",
+          "description": "Apply to a job vacancy. Supply EITHER resume_id (for existing resume) OR cv_file (to upload new resume). Do not supply both.",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{seeker_token}}"
-              }
             ],
             "body": {
               "mode": "formdata",
               "formdata": [
                 {
-                  "key": "jobVacancyId",
-                  "value": "{{vacancy_id}}",
+                  "key": "user_id",
+                  "value": "{{seeker_user_id}}",
                   "type": "text"
                 },
                 {
@@ -220,28 +191,26 @@
                   "type": "text"
                 },
                 {
-                  "key": "userId",
-                  "value": "{{seeker_user_id}}",
-                  "type": "text"
+                  "key": "resume_id",
+                  "value": "{{resume_id}}",
+                  "type": "text",
+                  "disabled": false
                 },
                 {
-                  "key": "user_id",
-                  "value": "{{seeker_user_id}}",
-                  "type": "text"
-                },
-                {
-                  "key": "cv",
+                  "key": "cv_file",
                   "type": "file",
+                  "disabled": true,
                   "src": []
                 }
               ]
             },
             "url": {
-              "raw": "{{base_url}}/applications",
+              "raw": "{{base_url}}/api/applications",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "applications"
               ]
             }
@@ -264,27 +233,24 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{seeker_token}}"
-              }
             ],
             "body": {
               "mode": "formdata",
               "formdata": [
                 {
-                  "key": "cv",
+                  "key": "cv_file",
                   "type": "file",
                   "src": []
                 }
               ]
             },
             "url": {
-              "raw": "{{base_url}}/applications/{{application_id}}/upload-cv",
+              "raw": "{{base_url}}/api/applications/{{application_id}}/upload-cv",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "applications",
                 "{{application_id}}",
                 "upload-cv"
@@ -319,11 +285,12 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/auth/login",
+              "raw": "{{base_url}}/api/auth/login",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "auth",
                 "login"
               ]
@@ -357,24 +324,21 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/companies",
+              "raw": "{{base_url}}/api/companies",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "companies"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Acme Corporation\",\n  \"address\": \"123 Business Street, City\",\n  \"industry\": \"Technology\",\n  \"website\": \"https://acme.example.com\",\n  \"owner_id\": \"{{admin_user_id}}\"\n}"
+              "raw": "{\n  \"name\": \"{{company_name}}\",\n  \"address\": \"{{company_address}}\",\n  \"industry\": \"{{company_industry}}\",\n  \"website\": \"{{company_website}}\",\n  \"email\": \"{{company_email}}\",\n  \"password\": \"{{company_password}}\"\n}"
             }
           },
           "event": [
@@ -391,7 +355,7 @@
           ]
         },
         {
-          "name": "Create Company Owner",
+          "name": "Company Login",
           "request": {
             "method": "POST",
             "header": [
@@ -401,18 +365,20 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/auth/register",
+              "raw": "{{base_url}}/api/auth/company/login",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "auth",
-                "register"
+                "company",
+                "login"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Acme Corporation\",\n  \"address\": \"123 Business Street, City\",\n  \"industry\": \"Technology\",\n  \"website\": \"https://acme.example.com\",\n  \"owner_id\": \"{{admin_user_id}}\"\n}"
+              "raw": "{\n  \"email\": \"{{company_email}}\",\n  \"password\": \"{{company_password}}\"\n}"
             }
           },
           "event": [
@@ -421,10 +387,10 @@
               "script": {
                 "exec": [
                   "var json = {}; try { json = pm.response.json(); } catch (e) {}",
-                  "pm.test('Create company owner', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
-                  "if (json.data && json.data.token) { pm.environment.set('owner_token', json.data.token); }",
-                  "if (json.data && json.data.user_id) { pm.environment.set('owner_user_id', json.data.user_id); }",
-                  "if (json.data && json.data.role) { pm.environment.set('owner_role', json.data.role); }"
+                  "pm.test('Company login', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.token) { pm.environment.set('company_token', json.data.token); pm.environment.set('token', json.data.token); }",
+                  "if (json.data && json.data.company_id) { pm.environment.set('company_id', json.data.company_id); }",
+                  "pm.environment.set('role', 'company');"
                 ]
               }
             }
@@ -444,24 +410,21 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/departments",
+              "raw": "{{base_url}}/api/departments",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "departments"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"company_id\": \"{{company_id}}\",\n  \"name\": \"Engineering\",\n  \"code\": \"ENG-001\"\n}"
+              "raw": "{\n  \"name\": \"{{department_name}}\",\n  \"code\": \"{{department_code}}\"\n}"
             }
           },
           "event": [
@@ -478,6 +441,123 @@
           ]
         },
         {
+          "name": "Register HR User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"HR User\",\n  \"email\": \"{{hr_email}}\",\n  \"password\": \"{{hr_password}}\",\n  \"role\": \"job_seeker\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Register HR user', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.user_id) { pm.environment.set('hr_user_id', json.data.user_id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register Manager User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Manager User\",\n  \"email\": \"{{manager_email}}\",\n  \"password\": \"{{manager_password}}\",\n  \"role\": \"job_seeker\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Register manager user', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.user_id) { pm.environment.set('manager_user_id', json.data.user_id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register Employee User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Employee User\",\n  \"email\": \"{{employee_email}}\",\n  \"password\": \"{{employee_password}}\",\n  \"role\": \"job_seeker\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Register employee user', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "if (json.data && json.data.user_id) { pm.environment.set('employee_user_id', json.data.user_id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Create HR Employee",
           "request": {
             "method": "POST",
@@ -485,18 +565,15 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/employees",
+              "raw": "{{base_url}}/api/employees",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "employees"
               ]
             },
@@ -526,18 +603,15 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/employees",
+              "raw": "{{base_url}}/api/employees",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "employees"
               ]
             },
@@ -567,18 +641,15 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/employees",
+              "raw": "{{base_url}}/api/employees",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "employees"
               ]
             },
@@ -605,13 +676,9 @@
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
             ],
             "url": {
-              "raw": "{{base_url}}/employees?company_id={{company_id}}&department_id={{department_id}}",
+              "raw": "{{base_url}}/api/employees?company_id={{company_id}}&department_id={{department_id}}",
               "query": [
                 {
                   "key": "company_id",
@@ -628,6 +695,7 @@
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "employees"
               ]
             }
@@ -648,17 +716,14 @@
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
             ],
             "url": {
-              "raw": "{{base_url}}/employees/{{employee_id}}",
+              "raw": "{{base_url}}/api/employees/{{employee_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "employees",
                 "{{employee_id}}"
               ]
@@ -683,18 +748,15 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/employees/{{employee_id}}",
+              "raw": "{{base_url}}/api/employees/{{employee_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "employees",
                 "{{employee_id}}"
               ]
@@ -723,18 +785,15 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/employees/{{employee_id}}/transfer-department",
+              "raw": "{{base_url}}/api/employees/{{employee_id}}/transfer-department",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "employees",
                 "{{employee_id}}",
                 "transfer-department"
@@ -764,18 +823,15 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/employees/{{employee_id}}/assign-manager",
+              "raw": "{{base_url}}/api/employees/{{employee_id}}/assign-manager",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "employees",
                 "{{employee_id}}",
                 "assign-manager"
@@ -802,17 +858,14 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
             ],
             "url": {
-              "raw": "{{base_url}}/employees/{{employee_id}}/terminate",
+              "raw": "{{base_url}}/api/employees/{{employee_id}}/terminate",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "employees",
                 "{{employee_id}}",
                 "terminate"
@@ -847,11 +900,12 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/auth/login",
+              "raw": "{{base_url}}/api/auth/login",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "auth",
                 "login"
               ]
@@ -882,17 +936,14 @@
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{employee_token}}"
-              }
             ],
             "url": {
-              "raw": "{{base_url}}/me",
+              "raw": "{{base_url}}/api/me",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "me"
               ]
             }
@@ -916,18 +967,15 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{employee_token}}"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/leave/apply",
+              "raw": "{{base_url}}/api/leave/apply",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "leave",
                 "apply"
               ]
@@ -955,17 +1003,14 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
             ],
             "url": {
-              "raw": "{{base_url}}/employees/{{employee_id}}/check-in",
+              "raw": "{{base_url}}/api/employees/{{employee_id}}/check-in",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "employees",
                 "{{employee_id}}",
                 "check-in"
@@ -988,17 +1033,14 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
             ],
             "url": {
-              "raw": "{{base_url}}/employees/{{employee_id}}/check-out",
+              "raw": "{{base_url}}/api/employees/{{employee_id}}/check-out",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "employees",
                 "{{employee_id}}",
                 "check-out"
@@ -1021,13 +1063,9 @@
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
             ],
             "url": {
-              "raw": "{{base_url}}/attendance?employee_id={{employee_id}}&from_date=2024-05-01&to_date=2024-05-31",
+              "raw": "{{base_url}}/api/attendance?employee_id={{employee_id}}&from_date=2024-05-01&to_date=2024-05-31",
               "query": [
                 {
                   "key": "employee_id",
@@ -1049,6 +1087,7 @@
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "attendance"
               ]
             }
@@ -1075,17 +1114,14 @@
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
             ],
             "url": {
-              "raw": "{{base_url}}/leaves?employee_id={{employee_id}}",
+              "raw": "{{base_url}}/api/leaves?employee_id={{employee_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "leaves"
               ]
             }
@@ -1109,18 +1145,15 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/leave/approve",
+              "raw": "{{base_url}}/api/leave/approve",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "leave",
                 "approve"
               ]
@@ -1149,18 +1182,15 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/leave/reject",
+              "raw": "{{base_url}}/api/leave/reject",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "leave",
                 "reject"
               ]
@@ -1195,18 +1225,15 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/job-vacancies",
+              "raw": "{{base_url}}/api/job-vacancies",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "job-vacancies"
               ]
             },
@@ -1229,62 +1256,18 @@
           ]
         },
         {
-          "name": "Apply To Vacancy",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/applications",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "applications"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\"vacancy_id\": \"{{vacancy_id}}\", \"applicant_name\": \"{{seeker_name}}\", \"applicant_email\": \"{{seeker_email}}\", \"resume_id\": \"{{resume_id}}\"}"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
-                  "pm.test('Apply to vacancy', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
-                  "if (json.data && json.data.id) { pm.environment.set('application_id', json.data.id); }"
-                ]
-              }
-            }
-          ]
-        },
-        {
           "name": "Review Applications",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
             ],
             "url": {
-              "raw": "{{base_url}}/applications",
+              "raw": "{{base_url}}/api/applications",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "applications"
               ]
             }
@@ -1308,18 +1291,15 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/applications/{{application_id}}/accept",
+              "raw": "{{base_url}}/api/applications/{{application_id}}/accept",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "applications",
                 "{{application_id}}",
                 "accept"
@@ -1349,18 +1329,15 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/applications/{{application_id}}/reject",
+              "raw": "{{base_url}}/api/applications/{{application_id}}/reject",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "applications",
                 "{{application_id}}",
                 "reject"
@@ -1381,51 +1358,6 @@
               }
             }
           ]
-        },
-        {
-          "name": "Upload CV to Application",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "cv_file",
-                  "type": "file",
-                  "src": []
-                }
-              ]
-            },
-            "url": {
-              "raw": "{{base_url}}/applications/{{application_id}}/upload-cv",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "applications",
-                "{{application_id}}",
-                "upload-cv"
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var json = {}; try { json = pm.response.json(); } catch (e) {}",
-                  "pm.test('Upload CV to application', function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
-                  "if (json.data && json.data.id) { pm.environment.set('application_id', json.data.id); }"
-                ]
-              }
-            }
-          ]
         }
       ]
     },
@@ -1438,17 +1370,14 @@
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{seeker_token}}"
-              }
             ],
             "url": {
-              "raw": "{{base_url}}/helpers/resumes",
+              "raw": "{{base_url}}/api/helpers/resumes",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "helpers",
                 "resumes"
               ]
@@ -1470,17 +1399,14 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{seeker_token}}"
-              }
             ],
             "url": {
-              "raw": "{{base_url}}/helpers/resumes",
+              "raw": "{{base_url}}/api/helpers/resumes",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
+                "api",
                 "helpers",
                 "resumes"
               ]
@@ -1503,3 +1429,4 @@
     }
   ]
 }
+
