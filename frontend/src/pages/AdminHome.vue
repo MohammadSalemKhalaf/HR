@@ -1,8 +1,9 @@
 <template>
-  <div class="p-6">
-    <h1 class="text-2xl font-bold">Admin Dashboard (Stub)</h1>
-    <p class="mt-4">This is a scaffolded admin shell. Build pages in modules/admin/pages</p>
+  <div class="min-h-screen bg-gray-50">
+    <AdminDashboard />
   </div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import AdminDashboard from '@/modules/admin/pages/Dashboard.vue'
+</script>

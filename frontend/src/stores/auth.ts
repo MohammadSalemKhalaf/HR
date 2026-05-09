@@ -51,7 +51,12 @@ export const useAuthStore = defineStore('auth', {
         console.log('[Auth] Fetching user profile...')
         const { data } = await api.get('/auth/me')
         console.log('[Auth] User profile response:', data)
-        this.user = data.user || data
+        const payload = data.data || data
+        this.user = {
+          ...(payload.user || payload),
+          role: payload.role || payload.user?.role,
+          role_id: payload.user?.role_id || payload.role_id
+        }
         this.error = null
         return this.user
       } catch (e) {
@@ -120,18 +125,23 @@ export const useAuthStore = defineStore('auth', {
 
         // Extract user data
         if (responseData.data?.user) {
-          userData = responseData.data.user
+          userData = {
+            ...responseData.data.user,
+            role: responseData.data.role || responseData.data.user.role,
+            role_id: responseData.data.user.role_id || responseData.data.role_id
+          }
           console.log('[Auth] User data from data.user:', userData)
         } else if (responseData.data?.user_id) {
           // If we have user_id but not full user object, create minimal user
           userData = {
             id: responseData.data.user_id,
             email: credentials.email,
-            role: responseData.data.role || 'unknown'
+            role: responseData.data.role || 'unknown',
+            role_id: responseData.data.role_id
           }
           console.log('[Auth] Created user object from user_id:', userData)
         } else {
-          userData = { id: null, email: credentials.email, role: responseData.data?.role }
+          userData = { id: null, email: credentials.email, role: responseData.data?.role, role_id: responseData.data?.role_id }
           console.log('[Auth] Created minimal user object:', userData)
         }
 

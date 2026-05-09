@@ -7,9 +7,11 @@ use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\HelperController;
+use App\Http\Controllers\Api\ManagerTaskController;
 use App\Http\Controllers\Api\JobApplicationController;
 use App\Http\Controllers\Api\JobVacancyController;
 use App\Http\Controllers\Api\LeaveController;
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -17,10 +19,29 @@ Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('company/login', [AuthController::class, 'companyLogin']);
     Route::post('employee/login', [AuthController::class, 'employeeLogin']);
+    Route::middleware('token.auth')->get('me', [AuthController::class, 'me']);
 });
 
 Route::middleware('token.auth')->group(function () {
     Route::get('me', [AuthController::class, 'me']);
+
+    // Admin endpoints
+    Route::get('admin/dashboard-stats', function () {
+        return [
+            'companies' => \App\Models\Company::count(),
+            'departments' => \App\Models\Department::count(),
+            'employees' => \App\Models\Employee::count(),
+        ];
+    });
+
+    // User management (Admin only)
+    Route::middleware('role:admin')->group(function () {
+        Route::get('admin/users', [UserController::class, 'index']);
+        Route::get('admin/users/{id}', [UserController::class, 'show']);
+        Route::put('admin/users/{id}', [UserController::class, 'update']);
+        Route::delete('admin/users/{id}', [UserController::class, 'destroy']);
+        Route::put('admin/users/{id}/restore', [UserController::class, 'restore']);
+    });
 
     Route::get('companies', [CompanyController::class, 'index']);
     Route::post('companies', [CompanyController::class, 'store']);
@@ -58,6 +79,15 @@ Route::middleware('token.auth')->group(function () {
     Route::post('leave/apply', [LeaveController::class, 'store']);
     Route::post('leave/approve', [LeaveController::class, 'approve']);
     Route::post('leave/reject', [LeaveController::class, 'reject']);
+
+    Route::prefix('manager')->middleware('role:manager')->group(function () {
+        Route::get('tasks', [ManagerTaskController::class, 'index']);
+        Route::get('tasks/employees', [ManagerTaskController::class, 'employees']);
+        Route::get('tasks/{id}', [ManagerTaskController::class, 'show']);
+        Route::post('tasks', [ManagerTaskController::class, 'store']);
+        Route::put('tasks/{id}', [ManagerTaskController::class, 'update']);
+        Route::delete('tasks/{id}', [ManagerTaskController::class, 'destroy']);
+    });
 
     Route::get('helpers/me', [HelperController::class, 'me']);
     Route::get('helpers/resumes', [HelperController::class, 'resumes']);

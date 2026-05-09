@@ -1,11 +1,11 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
-import Login from '@/pages/Login.vue'
-import AdminHome from '@/pages/AdminHome.vue'
-import adminRoutes from '@/modules/admin/router'
-import { useAuthStore } from '@/stores/auth'
+import Login from '../pages/Login.vue'
+import adminRoutes from '../modules/admin/router/index'
+import managerRoutes from '../modules/manager/router'
+import { useAuthStore } from '../stores/auth'
 
 const routes: Array<RouteRecordRaw> = [
-  { path: '/', redirect: '/admin' },
+  { path: '/', redirect: '/login' },
   {
     path: '/login',
     name: 'Login',
@@ -13,9 +13,10 @@ const routes: Array<RouteRecordRaw> = [
     meta: { layout: 'auth', requiresGuest: true }
   },
   ...adminRoutes,
+  ...managerRoutes,
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/admin'
+    redirect: '/login'
   }
 ]
 
@@ -34,7 +35,7 @@ router.beforeEach(async (to, from, next) => {
   if (to.meta.requiresGuest) {
     if (auth.isAuthenticated) {
       // Redirect authenticated users to their dashboard
-      return next({ name: 'AdminDashboard' })
+      return next(auth.getRedirectPath())
     }
     return next()
   }

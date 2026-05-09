@@ -1,11 +1,10 @@
 import axios from 'axios'
 
 // Use backend URL directly (not proxied) for SPA to work properly
-const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8002'
+const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
 
 const api = axios.create({
   baseURL: `${BACKEND_URL}/api`,
-  withCredentials: true,
   headers: {
     Accept: 'application/json'
   }
@@ -46,6 +45,14 @@ export function getAuthToken(): string | null {
 export function clearAuthToken() {
   localStorage.removeItem('auth_token')
   console.log('[Axios] ✓ Token cleared from localStorage')
+}
+
+/**
+ * Ensure the CSRF cookie is available before state-changing requests.
+ * This is a no-op for token-based auth, but keeps form flows compatible.
+ */
+export async function ensureCsrf() {
+  return Promise.resolve()
 }
 
 /**

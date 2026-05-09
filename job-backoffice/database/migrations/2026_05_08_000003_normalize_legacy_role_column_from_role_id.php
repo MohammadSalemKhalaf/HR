@@ -32,17 +32,24 @@ return new class extends Migration
                 $normalized = 'company';
             }
 
+            // Skip if normalized value is not in allowed list
             if (! in_array($normalized, $allowed, true)) {
                 $normalized = 'job_seeker';
             }
 
-            if (($user->role ?? null) !== $normalized) {
-                DB::table('users')
-                    ->where('id', $user->id)
-                    ->update([
-                        'role' => $normalized,
-                        'updated_at' => now(),
-                    ]);
+            // Only update if different and valid
+            if (($user->role ?? null) !== $normalized && in_array($normalized, $allowed, true)) {
+                try {
+                    DB::table('users')
+                        ->where('id', $user->id)
+                        ->update([
+                            'role' => $normalized,
+                            'updated_at' => now(),
+                        ]);
+                } catch (\Exception $e) {
+                    // Log and continue if specific user update fails
+                    \Log::warning("Failed to update role for user {$user->id}: " . $e->getMessage());
+                }
             }
         }
     }
