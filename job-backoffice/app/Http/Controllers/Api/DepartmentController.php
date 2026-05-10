@@ -24,7 +24,7 @@ class DepartmentController extends BaseApiController
 
     public function index(Request $request): JsonResponse
     {
-        $query = Department::with(['company', 'manager'])->latest();
+        $query = Department::with(['company', 'manager.user'])->latest();
         $actingUser = $request->user();
 
         if ($actingUser instanceof User && $actingUser->hasRole('company')) {
@@ -44,7 +44,7 @@ class DepartmentController extends BaseApiController
 
     public function show(Request $request, string $id): JsonResponse
     {
-        $department = Department::with(['company', 'manager'])->find($id);
+        $department = Department::with(['company', 'manager.user'])->find($id);
 
         if (! $department) {
             return $this->notFound('Department not found.');
@@ -101,7 +101,7 @@ class DepartmentController extends BaseApiController
             'manager_employee_id' => $request->input('manager_employee_id'),
         ]);
 
-        return $this->success('Department created successfully.', $department->load(['company', 'manager']), 201);
+        return $this->success('Department created successfully.', $department->load(['company', 'manager.user']), 201);
     }
 
     public function assignManager(Request $request, string $id): JsonResponse
@@ -140,7 +140,7 @@ class DepartmentController extends BaseApiController
             'manager_employee_id' => $manager->id,
         ]);
 
-        return $this->success('Department manager assigned successfully.', $department->fresh(['company', 'manager']));
+        return $this->success('Department manager assigned successfully.', $department->fresh(['company', 'manager.user']));
     }
 
     public function update(Request $request, string $id): JsonResponse
@@ -181,7 +181,7 @@ class DepartmentController extends BaseApiController
             'manager_employee_id' => $request->input('manager_employee_id'),
         ], static fn ($value) => $value !== null));
 
-        return $this->success('Department updated successfully.', $department->fresh(['company', 'manager']));
+        return $this->success('Department updated successfully.', $department->fresh(['company', 'manager.user']));
     }
 
     public function destroy(Request $request, string $id): JsonResponse

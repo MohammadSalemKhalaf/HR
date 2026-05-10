@@ -3,6 +3,8 @@ import Login from '../pages/Login.vue'
 import adminRoutes from '../modules/admin/router/index'
 import managerRoutes from '../modules/manager/router'
 import companyRoutes from '../modules/company/router'
+import employeeRoutes from '../modules/employee/router'
+import jobsRoutes from '../modules/jobs/router'
 import { useAuthStore } from '../stores/auth'
 
 const routes: Array<RouteRecordRaw> = [
@@ -16,6 +18,8 @@ const routes: Array<RouteRecordRaw> = [
   ...adminRoutes,
   ...companyRoutes,
   ...managerRoutes,
+  ...employeeRoutes,
+  ...jobsRoutes,
   {
     path: '/:pathMatch(.*)*',
     redirect: '/login'

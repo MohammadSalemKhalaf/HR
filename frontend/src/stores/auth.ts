@@ -12,6 +12,8 @@ export interface User {
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null as User | null,
+    employee: null as any,
+    company: null as any,
     token: getAuthToken() as string | null,
     loading: false,
     error: null as string | null
@@ -57,11 +59,15 @@ export const useAuthStore = defineStore('auth', {
           role: payload.role || payload.user?.role,
           role_id: payload.user?.role_id || payload.role_id
         }
+        this.employee = payload.employee || null
+        this.company = payload.company || null
         this.error = null
         return this.user
       } catch (e) {
         console.error('[Auth] Error fetching user:', e)
         this.user = null
+        this.employee = null
+        this.company = null
         this.token = null
         clearAuthToken()
         return null
@@ -148,6 +154,8 @@ export const useAuthStore = defineStore('auth', {
         // Store token and user
         this.token = token
         this.user = userData as User
+        this.employee = responseData.data?.employee || null
+        this.company = responseData.data?.company || null
         
         console.log('[Auth] ✓ Token stored:', token.substring(0, 20) + '...')
         console.log('[Auth] ✓ User object:', this.user)
@@ -221,6 +229,8 @@ export const useAuthStore = defineStore('auth', {
       this.loading = true
       console.log('[Auth] Logout initiated')
       this.user = null
+      this.employee = null
+      this.company = null
       this.token = null
       this.error = null
       clearAuthToken()

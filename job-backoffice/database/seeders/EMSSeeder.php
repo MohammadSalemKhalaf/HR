@@ -168,5 +168,17 @@ class EMSSeeder extends Seeder
             ]
         );
         $seeker->forceFill(['role_id' => User::roleIdFor('job_seeker')])->save();
+
+        // Create a second job seeker account for testing the job seeker flow
+        $guestSeeker = User::firstOrCreate(
+            ['email' => 'guest.seeker@acme.local'],
+            [
+                'name' => 'Guest Seeker',
+                'password' => Hash::make('Seeker@123'),
+                'role_id' => User::roleIdFor('job_seeker'),
+                'email_verified_at' => now(),
+            ]
+        );
+        $guestSeeker->forceFill(['role_id' => User::roleIdFor('job_seeker')])->save();
     }
 }

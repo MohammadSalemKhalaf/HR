@@ -16,10 +16,12 @@ class HelperController extends BaseApiController
 
     public function resumes(Request $request): JsonResponse
     {
+        $user = $request->user();
         $query = Resume::with('user')->latest();
 
-        if ($request->filled('user_id')) {
-            $query->where('userId', $request->string('user_id'));
+        // Always filter by the current authenticated user
+        if ($user) {
+            $query->where('userId', $user->id);
         }
 
         return $this->success('Resumes retrieved successfully.', $query->get());

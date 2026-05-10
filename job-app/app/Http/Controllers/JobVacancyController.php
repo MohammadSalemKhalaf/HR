@@ -178,13 +178,12 @@ class JobVacancyController extends Controller
         $apiKey = env('GROQ_API_KEY');
 
         if (!$apiKey) {
-            Log::warning('GROQ_API_KEY is missing. Cannot perform AI job-match analysis.', [
+            Log::warning('GROQ_API_KEY is missing. Falling back to local resume analysis for job-match.', [
                 'job_id' => $job->id,
             ]);
-            return [
-                'score' => 0,
-                'feedback' => 'Job-match analysis unavailable. API key not configured.',
-            ];
+
+            // Use a local heuristic to provide a fallback score/feedback when external AI is not configured.
+            return $this->buildApplicationAiData($analysis);
         }
 
         $resumeText = $this->buildResumeText($analysis);

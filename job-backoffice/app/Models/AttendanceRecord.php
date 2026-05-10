@@ -38,6 +38,10 @@ class AttendanceRecord extends Model
         'check_out_at' => 'datetime',
     ];
 
+    protected $appends = [
+        'hours',
+    ];
+
     // Explicit constructor to satisfy static analyzers which may warn when
     // models are instantiated with attribute arrays.
     public function __construct(array $attributes = [])
@@ -48,5 +52,34 @@ class AttendanceRecord extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    /**
+     * Human-readable worked hours between check-in and check-out.
+     * Returns null if either timestamp is missing.
+     * Examples: "8h 15m", "2h", "30m"
+     */
+    public function getHoursAttribute(): ?string
+    {
+        if (! $this->check_in_at || ! $this->check_out_at) {
+            return null;
+        }
+
+        $minutes = $this->check_in_at->diffInMinutes($this->check_out_at);
+
+        if ($minutes <= 0) return null;
+
+        $hours = intdiv($minutes, 60);
+        $mins = $minutes % 60;
+
+        if ($hours > 0 && $mins > 0) {
+            return "{$hours}h {$mins}m";
+        }
+
+        if ($hours > 0) {
+            return "{$hours}h";
+        }
+
+        return "{$mins}m";
     }
 }

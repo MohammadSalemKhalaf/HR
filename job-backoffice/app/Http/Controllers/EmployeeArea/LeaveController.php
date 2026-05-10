@@ -5,6 +5,7 @@ namespace App\Http\Controllers\EmployeeArea;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\Leave;
+use App\Models\NotificationPreference;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Notification;
@@ -59,7 +60,7 @@ class LeaveController extends Controller
 
         // Notify manager of leave request
         try {
-            if ($employee->manager && $employee->manager->user) {
+            if ($employee->manager && $employee->manager->user && $this->wantsEmail($employee->manager->user, 'leave_requested')) {
                 Notification::send($employee->manager->user, new LeaveRequested($leave));
             }
         } catch (\Throwable $e) {
@@ -79,5 +80,16 @@ class LeaveController extends Controller
         }
 
         return view('employee.leaves.show', compact('leave'));
+    }
+
+    private function wantsEmail($user, string $type): bool
+    {
+        if (! $user) {
+            return true;
+        }
+
+        $preferences = NotificationPreference::forUser($user);
+
+        return $preferences?->wantsEmail($type) ?? true;
     }
 }

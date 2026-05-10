@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use App\Models\EmployeeTask;
+use App\Models\NotificationPreference;
 use App\Services\ActivityLogService;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\TaskCompleted;
@@ -68,7 +69,7 @@ class TaskController extends Controller
         $task->save();
 
         /** @var \App\Models\User|null $user */
-        $user = auth()->user();
+        $user = $request->user();
 
         app(ActivityLogService::class)->log($task->company_id, $user?->id, 'task.status_changed', "Task status changed to {$task->status}: {$task->title}", $task, ['from' => $old, 'to' => $task->status, 'note' => $validated['completion_note'] ?? null]);
 
@@ -76,10 +77,23 @@ class TaskController extends Controller
             try {
                 // notify manager about completion
                 $managerUser = $task->manager->user ?? null;
-                if ($managerUser) Notification::send($managerUser, new TaskCompleted($task));
+                if ($managerUser && $this->wantsEmail($managerUser, 'task_completed')) {
+                    Notification::send($managerUser, new TaskCompleted($task));
+                }
             } catch (\Throwable $e) { report($e); }
         }
 
         return Redirect::back()->with('success','Task status updated.');
+    }
+
+    private function wantsEmail($user, string $type): bool
+    {
+        if (! $user) {
+            return true;
+        }
+
+        $preferences = NotificationPreference::forUser($user);
+
+        return $preferences?->wantsEmail($type) ?? true;
     }
 }

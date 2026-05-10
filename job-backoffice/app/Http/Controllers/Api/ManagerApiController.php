@@ -8,6 +8,7 @@ use App\Models\AttendanceRecord;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Leave;
+use App\Models\NotificationPreference;
 use App\Notifications\DepartmentBroadcastNotification;
 use App\Notifications\LeaveApproved;
 use App\Notifications\LeaveRejected;
@@ -200,7 +201,7 @@ class ManagerApiController extends Controller
         );
 
         try {
-            if ($leave->employee?->user) {
+            if ($leave->employee?->user && $this->wantsEmail($leave->employee->user, 'leave_approval')) {
                 Notification::send($leave->employee->user, new LeaveApproved($leave));
             }
         } catch (\Throwable $e) {
@@ -243,7 +244,7 @@ class ManagerApiController extends Controller
         );
 
         try {
-            if ($leave->employee?->user) {
+            if ($leave->employee?->user && $this->wantsEmail($leave->employee->user, 'leave_approval')) {
                 Notification::send($leave->employee->user, new LeaveRejected($leave));
             }
         } catch (\Throwable $e) {
@@ -432,5 +433,16 @@ class ManagerApiController extends Controller
             'message' => 'Department notification sent successfully.',
             'recipient_count' => $recipients->count(),
         ]);
+    }
+
+    private function wantsEmail($user, string $type): bool
+    {
+        if (! $user) {
+            return true;
+        }
+
+        $preferences = NotificationPreference::forUser($user);
+
+        return $preferences?->wantsEmail($type) ?? true;
     }
 }

@@ -49,10 +49,15 @@ class AuthController extends BaseApiController
             return $this->error('Validation failed.', $validator->errors(), 422);
         }
 
-        $user = User::where('email', $request->string('email'))->first();
+        $user = User::with('employee')->where('email', $request->string('email'))->first();
 
         if (! $user || ! Hash::check($request->string('password'), $user->password)) {
             return $this->error('Invalid credentials.', [], 401);
+        }
+
+        // Check if employee is terminated
+        if ($user->employee && $user->employee->status === 'terminated') {
+            return $this->error('Your employment has been terminated. Please contact HR.', [], 403);
         }
 
         return $this->success('Login successful.', $this->authPayload($user, $tokens));
@@ -83,6 +88,10 @@ class AuthController extends BaseApiController
 
         if (! $employee) {
             return $this->error('Employee profile not found.', [], 404);
+        }
+
+        if ($employee->status === 'terminated') {
+            return $this->error('Your employment has been terminated. Please contact HR.', [], 403);
         }
 
         return $this->success('Employee login successful.', [
@@ -157,3 +166,4 @@ class AuthController extends BaseApiController
         ];
     }
 }
+

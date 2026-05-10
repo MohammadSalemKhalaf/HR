@@ -71,9 +71,19 @@
       <header class="bg-white shadow">
         <div class="container mx-auto flex items-center justify-between p-4">
           <h1 class="text-lg font-bold">Backoffice</h1>
-          <nav class="space-x-4 text-sm text-gray-600">
-            <router-link to="/admin">Dashboard</router-link>
-          </nav>
+          <div class="flex items-center gap-3">
+            <nav class="space-x-4 text-sm text-gray-600">
+              <router-link :to="dashboardRoute">Dashboard</router-link>
+            </nav>
+            <button
+              v-if="isEmployeeArea"
+              type="button"
+              class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-100"
+              @click="authStore.logout()"
+            >
+              Log Out
+            </button>
+          </div>
         </div>
       </header>
       <main class="container mx-auto p-6">
@@ -92,6 +102,13 @@ const route = useRoute()
 const authStore = useAuthStore()
 
 const isManagerArea = computed(() => route.path.startsWith('/manager'))
+const isEmployeeArea = computed(() => route.path.startsWith('/employee'))
+
+const dashboardRoute = computed(() => {
+  if (isEmployeeArea.value) return '/employee'
+  if (isManagerArea.value) return '/manager'
+  return '/admin'
+})
 
 const managerNav = [
   { to: '/manager', label: 'Dashboard' },

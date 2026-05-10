@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Leave;
+use App\Models\NotificationPreference;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Notification;
+use Carbon\Carbon;
 use App\Services\ActivityLogService;
 use App\Notifications\LeaveApproved;
 use App\Notifications\LeaveRejected;
@@ -46,14 +48,14 @@ class LeaveController extends Controller
 
         $leave->status = 'approved';
         $leave->approved_by_user_id = $user->id;
-        $leave->approved_at = now();
+            $leave->approved_at = Carbon::now();
         $leave->save();
 
         app(ActivityLogService::class)->log($manager->company_id ?? null, $user->id, 'leave.approved', "Leave approved for {$leave->employee->user?->name}", $leave, ['leave_id' => $leave->id]);
 
         // Send approval notification to employee
         try {
-            if ($leave->employee->user) {
+            if ($leave->employee->user && $this->wantsEmail($leave->employee->user, 'leave_approval')) {
                 Notification::send($leave->employee->user, new LeaveApproved($leave));
             }
         } catch (\Throwable $e) {
@@ -77,14 +79,14 @@ class LeaveController extends Controller
 
         $leave->status = 'rejected';
         $leave->approved_by_user_id = $user->id;
-        $leave->approved_at = now();
+            $leave->approved_at = Carbon::now();
         $leave->save();
 
         app(ActivityLogService::class)->log($manager->company_id ?? null, $user->id, 'leave.rejected', "Leave rejected for {$leave->employee->user?->name}", $leave, ['leave_id' => $leave->id]);
 
         // Send rejection notification to employee
         try {
-            if ($leave->employee->user) {
+            if ($leave->employee->user && $this->wantsEmail($leave->employee->user, 'leave_approval')) {
                 Notification::send($leave->employee->user, new LeaveRejected($leave));
             }
         } catch (\Throwable $e) {
@@ -92,5 +94,16 @@ class LeaveController extends Controller
         }
 
         return Redirect::back()->with('success', 'Leave rejected.');
+    }
+
+    private function wantsEmail($user, string $type): bool
+    {
+        if (! $user) {
+            return true;
+        }
+
+        $preferences = NotificationPreference::forUser($user);
+
+        return $preferences?->wantsEmail($type) ?? true;
     }
 }

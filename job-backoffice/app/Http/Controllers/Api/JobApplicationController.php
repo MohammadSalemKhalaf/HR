@@ -128,10 +128,30 @@ class JobApplicationController extends BaseApiController
             return $this->error('You have already applied to this vacancy.', null, 409);
         }
 
+        // Attempt to compute an AI match score using resume fields (simple local heuristic)
+        $aiScore = 0;
+        $aiFeedback = null;
+
+        if ($resumeId) {
+            $resumeRecord = Resume::find($resumeId);
+            if ($resumeRecord) {
+                $analysis = [
+                    'summary' => $resumeRecord->summary ?? '',
+                    'skills' => $resumeRecord->skills ?? '',
+                    'experience' => $resumeRecord->experience ?? '',
+                    'education' => $resumeRecord->education ?? '',
+                ];
+
+                $aiData = $this->buildApplicationAiData($analysis);
+                $aiScore = $aiData['score'];
+                $aiFeedback = $aiData['feedback'];
+            }
+        }
+
         $application = JobApplication::create([
             'status' => 'pending',
-            'aiGeneratedScore' => 0,
-            'aiGeneratedFeedback' => null,
+            'aiGeneratedScore' => $aiScore,
+            'aiGeneratedFeedback' => $aiFeedback,
             'userId' => $userId,
             'resumeId' => $resumeId,
             'jobVacancyId' => $jobVacancyId,
@@ -211,6 +231,32 @@ class JobApplicationController extends BaseApiController
         $application->update(['status' => $request->input('status')]);
 
         return $this->success('Application updated successfully.', $application->fresh(['user', 'resume', 'jobvacancy.company']));
+    }
+
+    private function buildApplicationAiData(array $analysis): array
+    {
+        $fields = [
+            $analysis['summary'] ?? '',
+            $analysis['skills'] ?? '',
+            $analysis['experience'] ?? '',
+            $analysis['education'] ?? '',
+        ];
+
+        $filledFields = count(array_filter($fields, static fn ($value) => trim((string) $value) !== ''));
+        $score = round(($filledFields / 4) * 10, 1);
+
+        $feedback = match ($filledFields) {
+            4 => 'Resume analysis is complete and ready for review.',
+            3 => 'Resume analysis is mostly complete and ready for review.',
+            2 => 'Resume analysis is partial. The candidate profile may need more detail.',
+            1 => 'Resume analysis returned limited information.',
+            default => 'Resume analysis returned no usable information.',
+        };
+
+        return [
+            'score' => $score,
+            'feedback' => $feedback,
+        ];
     }
 
     public function destroy(Request $request, string $id): JsonResponse

@@ -6,9 +6,11 @@ use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\EmployeeController;
+use App\Http\Controllers\Api\EmployeeTaskController;
 use App\Http\Controllers\Api\HelperController;
 use App\Http\Controllers\Api\ManagerTaskController;
 use App\Http\Controllers\Api\ManagerApiController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\JobApplicationController;
 use App\Http\Controllers\Api\JobVacancyController;
 use App\Http\Controllers\Api\LeaveController;
@@ -110,6 +112,7 @@ Route::middleware('token.auth')->group(function () {
     Route::post('leave/apply', [LeaveController::class, 'store']);
     Route::post('leave/approve', [LeaveController::class, 'approve']);
     Route::post('leave/reject', [LeaveController::class, 'reject']);
+    Route::post('leave/cancel', [LeaveController::class, 'cancel']);
 
     Route::prefix('manager')->middleware('role:manager')->group(function () {
         Route::get('tasks', [ManagerTaskController::class, 'index']);
@@ -132,6 +135,16 @@ Route::middleware('token.auth')->group(function () {
         Route::get('department-notifications/meta', [ManagerApiController::class, 'getNotificationMeta']);
         Route::post('department-notifications', [ManagerApiController::class, 'sendDepartmentNotification']);
     });
+
+    Route::prefix('employee')->middleware('role:employee')->group(function () {
+        Route::get('tasks', [EmployeeTaskController::class, 'index']);
+        Route::get('tasks/{id}', [EmployeeTaskController::class, 'show']);
+        Route::put('tasks/{id}', [EmployeeTaskController::class, 'update']);
+    });
+
+    Route::get('notifications', [NotificationController::class, 'index']);
+    Route::put('notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
 
     Route::get('helpers/me', [HelperController::class, 'me']);
     Route::get('helpers/resumes', [HelperController::class, 'resumes']);
