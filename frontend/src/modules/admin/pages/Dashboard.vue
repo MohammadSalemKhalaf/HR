@@ -32,6 +32,13 @@
       <PageHeader title="Quick Actions" subtitle="Common admin tasks" />
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
         <RouterLink
+          to="/admin/users"
+          class="p-4 bg-cyan-50 hover:bg-cyan-100 rounded-lg text-center transition"
+        >
+          <div class="text-2xl mb-2">👤</div>
+          <p class="font-semibold text-sm text-cyan-900">Manage Users</p>
+        </RouterLink>
+        <RouterLink
           to="/admin/companies"
           class="p-4 bg-blue-50 hover:bg-blue-100 rounded-lg text-center transition"
         >
@@ -39,25 +46,18 @@
           <p class="font-semibold text-sm text-blue-900">Manage Companies</p>
         </RouterLink>
         <RouterLink
-          to="/admin/departments"
+          to="/admin/job-categories"
           class="p-4 bg-green-50 hover:bg-green-100 rounded-lg text-center transition"
         >
           <div class="text-2xl mb-2">📁</div>
-          <p class="font-semibold text-sm text-green-900">Manage Departments</p>
+          <p class="font-semibold text-sm text-green-900">Manage Categories</p>
         </RouterLink>
         <RouterLink
-          to="/admin/employees"
+          to="/admin/users"
           class="p-4 bg-purple-50 hover:bg-purple-100 rounded-lg text-center transition"
         >
-          <div class="text-2xl mb-2">👥</div>
-          <p class="font-semibold text-sm text-purple-900">Manage Employees</p>
-        </RouterLink>
-        <RouterLink
-          to="/admin/roles"
-          class="p-4 bg-amber-50 hover:bg-amber-100 rounded-lg text-center transition"
-        >
-          <div class="text-2xl mb-2">🔐</div>
-          <p class="font-semibold text-sm text-amber-900">Manage Roles</p>
+          <div class="text-2xl mb-2">🗂️</div>
+          <p class="font-semibold text-sm text-purple-900">Archived Users</p>
         </RouterLink>
       </div>
     </BaseCard>

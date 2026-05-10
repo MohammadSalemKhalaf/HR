@@ -5,10 +5,10 @@
       <div>
         <p class="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Administration</p>
         <h2 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">
-          Users
+          Job Categories
           <span v-if="showArchived" class="ml-2 text-sm font-medium text-slate-500">(Archived)</span>
         </h2>
-        <p class="mt-2 text-sm text-slate-600">Review accounts, roles, and archived users.</p>
+        <p class="mt-2 text-sm text-slate-600">Organize vacancies into clear hiring categories.</p>
       </div>
 
       <div class="flex flex-wrap gap-3">
@@ -17,28 +17,35 @@
           @click="showArchived = false"
           class="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
         >
-          Active Users
+          Active Categories
         </button>
-        <button
-          v-else
-          @click="showArchived = true"
-          class="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-        >
-          Archived Users
-        </button>
+        <template v-else>
+          <router-link
+            :to="{ name: 'JobCategoryCreate' }"
+            class="rounded-full bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500"
+          >
+            Add Category
+          </router-link>
+          <button
+            @click="showArchived = true"
+            class="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          >
+            Archived Categories
+          </button>
+        </template>
       </div>
     </div>
 
-    <!-- Users Table Card -->
+    <!-- Categories Table Card -->
     <div class="rounded-[2rem] border border-white/70 bg-white/85 shadow-lg shadow-slate-950/5 backdrop-blur overflow-hidden">
       <div class="border-b border-slate-200 px-6 py-4">
-        <p class="text-sm font-medium text-slate-500">Users List</p>
+        <p class="text-sm font-medium text-slate-500">Categories List</p>
         <h3 class="text-lg font-semibold text-slate-900">Total {{ pagination.total }}</h3>
       </div>
 
       <!-- Loading State -->
       <div v-if="loading" class="px-6 py-12 text-center text-slate-500">
-        Loading users...
+        Loading categories...
       </div>
 
       <!-- Error State -->
@@ -51,56 +58,52 @@
         <table class="min-w-full divide-y divide-slate-200">
           <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
             <tr>
-              <th class="px-6 py-3 text-left">Name</th>
-              <th class="px-6 py-3 text-left">Email</th>
-              <th class="px-6 py-3 text-left">Role</th>
+              <th class="px-6 py-3 text-left">Category Name</th>
               <th class="px-6 py-3 text-right">Actions</th>
             </tr>
           </thead>
 
           <tbody class="divide-y divide-slate-100 bg-white text-sm">
-            <tr v-for="user in users" :key="user.id" class="hover:bg-slate-50">
-              <td class="px-6 py-4 font-medium text-slate-900">{{ user.name }}</td>
-              <td class="px-6 py-4 text-slate-600">{{ user.email }}</td>
-              <td class="px-6 py-4 text-slate-600">{{ user.role_name || user.role }}</td>
+            <tr v-for="category in categories" :key="category.id" class="hover:bg-slate-50">
+              <td class="px-6 py-4 font-medium text-slate-900">{{ category.name }}</td>
               <td class="px-6 py-4 text-right">
                 <div class="flex items-center justify-end gap-3">
                   <template v-if="showArchived">
                     <button
-                      @click="restoreUser(user.id)"
-                      :disabled="restoringId === user.id"
+                      @click="restoreCategory(category.id)"
+                      :disabled="restoringId === category.id"
                       class="font-semibold text-emerald-600 hover:text-emerald-700 disabled:opacity-50"
                     >
-                      {{ restoringId === user.id ? 'Restoring...' : 'Restore' }}
+                      {{ restoringId === category.id ? 'Restoring...' : 'Restore' }}
                     </button>
                   </template>
                   <template v-else>
                     <router-link
-                      :to="{ name: 'UserEdit', params: { id: user.id } }"
+                      :to="{ name: 'JobCategoryEdit', params: { id: category.id } }"
                       class="font-semibold text-cyan-700 hover:text-cyan-800"
                     >
                       Edit
                     </router-link>
                     <button
-                      @click="archiveUser(user.id)"
-                      :disabled="archivingId === user.id"
+                      @click="archiveCategory(category.id)"
+                      :disabled="archivingId === category.id"
                       class="font-semibold text-rose-600 hover:text-rose-700 disabled:opacity-50"
                     >
-                      {{ archivingId === user.id ? 'Archiving...' : 'Archive' }}
+                      {{ archivingId === category.id ? 'Archiving...' : 'Archive' }}
                     </button>
                   </template>
                 </div>
               </td>
             </tr>
-            <tr v-if="users.length === 0">
-              <td colspan="4" class="px-6 py-12 text-center text-slate-500">No users found.</td>
+            <tr v-if="categories.length === 0">
+              <td colspan="2" class="px-6 py-12 text-center text-slate-500">No categories found.</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <!-- Pagination -->
-      <div v-if="!loading && !error && users.length > 0" class="border-t border-slate-200 px-6 py-4">
+      <div v-if="!loading && !error && categories.length > 0" class="border-t border-slate-200 px-6 py-4">
         <div class="flex items-center justify-between">
           <div class="text-sm text-slate-600">
             Page {{ pagination.current_page }} of {{ pagination.last_page }}
@@ -131,12 +134,9 @@
 import { ref, watch, onMounted } from 'vue'
 import api from '@/api/axios'
 
-interface User {
+interface JobCategory {
   id: string
   name: string
-  email: string
-  role: string
-  role_name: string
   deleted_at: string | null
 }
 
@@ -147,7 +147,7 @@ interface Pagination {
   last_page: number
 }
 
-const users = ref<User[]>([])
+const categories = ref<JobCategory[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const showArchived = ref(false)
@@ -162,7 +162,7 @@ const pagination = ref<Pagination>({
 
 const currentPage = ref(1)
 
-const fetchUsers = async () => {
+const fetchCategories = async () => {
   loading.value = true
   error.value = null
   try {
@@ -172,47 +172,50 @@ const fetchUsers = async () => {
     }
     params.append('page', currentPage.value.toString())
 
-    const response = await api.get('/admin/users', { params })
-    users.value = response.data.data.data || response.data.data || []
-    pagination.value = {
-      current_page: response.data.data.pagination?.current_page || 1,
-      per_page: response.data.data.pagination?.per_page || 10,
-      total: response.data.data.pagination?.total || 0,
-      last_page: response.data.data.pagination?.last_page || 1
+    const response = await api.get('/job-categories', { params })
+    categories.value = response.data.data?.data || response.data.data || []
+
+    if (response.data.data && typeof response.data.data === 'object' && 'current_page' in response.data.data) {
+      pagination.value = {
+        current_page: response.data.data.current_page || 1,
+        per_page: response.data.data.per_page || 10,
+        total: response.data.data.total || 0,
+        last_page: response.data.data.last_page || 1
+      }
     }
   } catch (err: any) {
-    error.value = err.response?.data?.message || 'Failed to load users'
-    console.error('Error fetching users:', err)
+    error.value = err.response?.data?.message || 'Failed to load categories'
+    console.error('Error fetching categories:', err)
   } finally {
     loading.value = false
   }
 }
 
-const archiveUser = async (userId: string) => {
-  if (!confirm('Archive this user?')) return
+const archiveCategory = async (categoryId: string) => {
+  if (!confirm('Are you sure?')) return
 
-  archivingId.value = userId
+  archivingId.value = categoryId
   try {
-    await api.delete(`/admin/users/${userId}`)
-    await fetchUsers()
+    await api.delete(`/job-categories/${categoryId}`)
+    await fetchCategories()
   } catch (err: any) {
-    error.value = err.response?.data?.message || 'Failed to archive user'
-    console.error('Error archiving user:', err)
+    error.value = err.response?.data?.message || 'Failed to archive category'
+    console.error('Error archiving category:', err)
   } finally {
     archivingId.value = null
   }
 }
 
-const restoreUser = async (userId: string) => {
-  if (!confirm('Restore this user?')) return
+const restoreCategory = async (categoryId: string) => {
+  if (!confirm('Restore this category?')) return
 
-  restoringId.value = userId
+  restoringId.value = categoryId
   try {
-    await api.put(`/admin/users/${userId}/restore`)
-    await fetchUsers()
+    await api.post(`/job-categories/${categoryId}/restore`)
+    await fetchCategories()
   } catch (err: any) {
-    error.value = err.response?.data?.message || 'Failed to restore user'
-    console.error('Error restoring user:', err)
+    error.value = err.response?.data?.message || 'Failed to restore category'
+    console.error('Error restoring category:', err)
   } finally {
     restoringId.value = null
   }
@@ -232,10 +235,10 @@ const previousPage = () => {
 
 watch(showArchived, () => {
   currentPage.value = 1
-  fetchUsers()
+  fetchCategories()
 })
 
-watch(currentPage, fetchUsers)
+watch(currentPage, fetchCategories)
 
-onMounted(fetchUsers)
+onMounted(fetchCategories)
 </script>

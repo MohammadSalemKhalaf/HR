@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\JobApplicationController;
 use App\Http\Controllers\Api\JobVacancyController;
 use App\Http\Controllers\Api\LeaveController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\JobCategoryController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -41,12 +42,23 @@ Route::middleware('token.auth')->group(function () {
         Route::put('admin/users/{id}', [UserController::class, 'update']);
         Route::delete('admin/users/{id}', [UserController::class, 'destroy']);
         Route::put('admin/users/{id}/restore', [UserController::class, 'restore']);
-    });
 
-    Route::get('companies', [CompanyController::class, 'index']);
-    Route::post('companies', [CompanyController::class, 'store']);
-    Route::put('companies/{id}', [CompanyController::class, 'update']);
-    Route::delete('companies/{id}', [CompanyController::class, 'destroy']);
+        // Job categories (Admin only)
+        Route::get('job-categories', [JobCategoryController::class, 'index']);
+        Route::post('job-categories', [JobCategoryController::class, 'store']);
+        Route::get('job-categories/{id}', [JobCategoryController::class, 'show']);
+        Route::put('job-categories/{id}', [JobCategoryController::class, 'update']);
+        Route::delete('job-categories/{id}', [JobCategoryController::class, 'destroy']);
+        Route::post('job-categories/{id}/restore', [JobCategoryController::class, 'restore']);
+
+        // Companies (Admin only)
+        Route::get('companies', [CompanyController::class, 'index']);
+        Route::post('companies', [CompanyController::class, 'store']);
+        Route::get('companies/{id}', [CompanyController::class, 'show']);
+        Route::put('companies/{id}', [CompanyController::class, 'update']);
+        Route::delete('companies/{id}', [CompanyController::class, 'destroy']);
+        Route::post('companies/{id}/restore', [CompanyController::class, 'restore']);
+    });
 
     Route::get('departments', [DepartmentController::class, 'index']);
     Route::post('departments', [DepartmentController::class, 'store']);

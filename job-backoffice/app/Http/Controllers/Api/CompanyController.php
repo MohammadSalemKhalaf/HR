@@ -21,7 +21,9 @@ class CompanyController extends BaseApiController
             $query->onlyTrashed();
         }
 
-        return $this->success('Companies retrieved successfully.', $query->get());
+        $companies = $query->paginate(10);
+
+        return $this->success('Companies retrieved successfully.', $companies);
     }
 
     public function store(Request $request): JsonResponse
@@ -50,7 +52,6 @@ class CompanyController extends BaseApiController
                     ->where('id', $user->id)
                     ->update([
                         'role_id' => $companyRoleId,
-                        'role' => 'job_seeker',
                     ]);
             } elseif ($request->filled('email') && $request->filled('password')) {
                 $user = User::create([
@@ -63,7 +64,6 @@ class CompanyController extends BaseApiController
                     ->where('id', $user->id)
                     ->update([
                         'role_id' => $companyRoleId,
-                        'role' => 'job_seeker',
                     ]);
             } else {
                 $user = $request->user();
@@ -114,6 +114,17 @@ class CompanyController extends BaseApiController
         return $this->success('Company updated successfully.', $company->fresh('owner'));
     }
 
+    public function show(string $id): JsonResponse
+    {
+        $company = Company::with('owner')->find($id);
+
+        if (! $company) {
+            return $this->notFound('Company not found.');
+        }
+
+        return $this->success('Company retrieved successfully.', $company);
+    }
+
     public function destroy(string $id): JsonResponse
     {
         $company = Company::find($id);
@@ -125,5 +136,22 @@ class CompanyController extends BaseApiController
         $company->delete();
 
         return $this->success('Company archived successfully.');
+    }
+
+    public function restore(string $id): JsonResponse
+    {
+        $company = Company::withTrashed()->find($id);
+
+        if (! $company) {
+            return $this->notFound('Company not found.');
+        }
+
+        if (! $company->trashed()) {
+            return $this->error('Company is not archived.', [], 422);
+        }
+
+        $company->restore();
+
+        return $this->success('Company restored successfully.', $company->load('owner'));
     }
 }
