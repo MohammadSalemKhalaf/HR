@@ -4,21 +4,38 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\JobCategory;
 use App\Models\JobVacancy;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class JobVacancyController extends BaseApiController
 {
-    public function index(): JsonResponse
+    private function resolveCompanyId(Request $request): string
     {
-        $query = JobVacancy::with('company')->latest();
+        $actingUser = $request->user();
 
-        if (request()->filled('company_id')) {
-            $query->where('companyId', request()->string('company_id'));
+        if ($actingUser instanceof User && $actingUser->hasRole('company')) {
+            return (string) ($actingUser->company?->id ?? $actingUser->employee?->company_id ?? '');
         }
 
-        return $this->success('Job vacancies retrieved successfully.', $query->get());
+        return (string) $request->string('company_id');
+    }
+
+    public function index(Request $request): JsonResponse
+    {
+        $query = JobVacancy::with('company')->latest();
+        $companyId = $this->resolveCompanyId($request);
+
+        if ($companyId !== '') {
+            $query->where('companyId', $companyId);
+        }
+
+        if ($request->boolean('archived')) {
+            $query->onlyTrashed();
+        }
+
+        return $this->success('Job vacancies retrieved successfully.', $query->paginate(10));
     }
 
     public function store(Request $request): JsonResponse
@@ -30,7 +47,7 @@ class JobVacancyController extends BaseApiController
             'salary' => ['required', 'string', 'max:255'],
             'type' => ['nullable', 'in:full-time,contract,hybrid,remote'],
             'category_id' => ['nullable', 'exists:job_categories,id'],
-            'company_id' => ['required', 'exists:companies,id'],
+            'company_id' => ['nullable', 'exists:companies,id'],
         ]);
 
         if ($validator->fails()) {
@@ -43,6 +60,12 @@ class JobVacancyController extends BaseApiController
             $categoryId = JobCategory::firstOrCreate(['name' => 'General'])->id;
         }
 
+        $resolvedCompanyId = $this->resolveCompanyId($request);
+
+        if ($resolvedCompanyId === '') {
+            return $this->error('Validation failed.', ['company_id' => ['Company could not be resolved from token.']], 422);
+        }
+
         $jobVacancy = JobVacancy::create([
             'title' => $request->input('title'),
             'description' => $request->input('description'),
@@ -50,13 +73,13 @@ class JobVacancyController extends BaseApiController
             'salary' => $request->input('salary'),
             'type' => $request->input('type', 'full-time'),
             'categoryId' => $categoryId,
-            'companyId' => $request->string('company_id'),
+            'companyId' => $resolvedCompanyId,
         ]);
 
         return $this->success('Job vacancy created successfully.', $jobVacancy->load('company'), 201);
     }
 
-    public function show(string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $jobVacancy = JobVacancy::with('company')->find($id);
 
@@ -64,6 +87,93 @@ class JobVacancyController extends BaseApiController
             return $this->notFound('Job vacancy not found.');
         }
 
+        $companyId = $this->resolveCompanyId($request);
+
+        if ($companyId !== '' && $jobVacancy->companyId !== $companyId) {
+            return $this->notFound('Job vacancy not found.');
+        }
+
         return $this->success('Job vacancy retrieved successfully.', $jobVacancy);
+    }
+
+    public function update(Request $request, string $id): JsonResponse
+    {
+        $jobVacancy = JobVacancy::find($id);
+
+        if (! $jobVacancy) {
+            return $this->notFound('Job vacancy not found.');
+        }
+
+        $companyId = $this->resolveCompanyId($request);
+
+        if ($companyId !== '' && $jobVacancy->companyId !== $companyId) {
+            return $this->notFound('Job vacancy not found.');
+        }
+
+        $validator = Validator::make($request->all(), [
+            'title' => ['sometimes', 'string', 'max:255'],
+            'description' => ['sometimes', 'string'],
+            'location' => ['sometimes', 'string', 'max:255'],
+            'salary' => ['sometimes', 'string', 'max:255'],
+            'type' => ['nullable', 'in:full-time,contract,hybrid,remote'],
+            'category_id' => ['nullable', 'exists:job_categories,id'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error('Validation failed.', $validator->errors(), 422);
+        }
+
+        $jobVacancy->update(array_filter([
+            'title' => $request->input('title'),
+            'description' => $request->input('description'),
+            'location' => $request->input('location'),
+            'salary' => $request->input('salary'),
+            'type' => $request->input('type'),
+            'categoryId' => $request->input('category_id'),
+        ], static fn ($value) => $value !== null));
+
+        return $this->success('Job vacancy updated successfully.', $jobVacancy->fresh('company'));
+    }
+
+    public function destroy(Request $request, string $id): JsonResponse
+    {
+        $jobVacancy = JobVacancy::find($id);
+
+        if (! $jobVacancy) {
+            return $this->notFound('Job vacancy not found.');
+        }
+
+        $companyId = $this->resolveCompanyId($request);
+
+        if ($companyId !== '' && $jobVacancy->companyId !== $companyId) {
+            return $this->notFound('Job vacancy not found.');
+        }
+
+        $jobVacancy->delete();
+
+        return $this->success('Job vacancy archived successfully.');
+    }
+
+    public function restore(Request $request, string $id): JsonResponse
+    {
+        $jobVacancy = JobVacancy::withTrashed()->find($id);
+
+        if (! $jobVacancy) {
+            return $this->notFound('Job vacancy not found.');
+        }
+
+        $companyId = $this->resolveCompanyId($request);
+
+        if ($companyId !== '' && $jobVacancy->companyId !== $companyId) {
+            return $this->notFound('Job vacancy not found.');
+        }
+
+        if (! $jobVacancy->trashed()) {
+            return $this->error('Job vacancy is not archived.', [], 422);
+        }
+
+        $jobVacancy->restore();
+
+        return $this->success('Job vacancy restored successfully.', $jobVacancy->fresh('company'));
     }
 }

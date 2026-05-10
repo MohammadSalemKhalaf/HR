@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Models\JobApplication;
 use App\Models\JobVacancy;
 use App\Models\Resume;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,15 +14,48 @@ use Illuminate\Support\Facades\Validator;
 
 class JobApplicationController extends BaseApiController
 {
+    private function resolveCompanyId(Request $request): string
+    {
+        $actingUser = $request->user();
+
+        if ($actingUser instanceof User && $actingUser->hasRole('company')) {
+            return (string) ($actingUser->company?->id ?? $actingUser->employee?->company_id ?? '');
+        }
+
+        return (string) $request->string('company_id');
+    }
+
     public function index(Request $request): JsonResponse
     {
         $query = JobApplication::with(['user', 'resume', 'jobvacancy.company'])->latest();
+        $companyId = $this->resolveCompanyId($request);
 
-        if ($request->filled('company_id')) {
-            $query->whereHas('jobvacancy', fn ($builder) => $builder->where('companyId', $request->string('company_id')));
+        if ($companyId !== '') {
+            $query->whereHas('jobvacancy', fn ($builder) => $builder->where('companyId', $companyId));
         }
 
-        return $this->success('Applications retrieved successfully.', $query->get());
+        if ($request->boolean('archived')) {
+            $query->onlyTrashed();
+        }
+
+        return $this->success('Applications retrieved successfully.', $query->paginate(10));
+    }
+
+    public function show(Request $request, string $id): JsonResponse
+    {
+        $application = JobApplication::with(['user', 'resume', 'jobvacancy.company'])->withTrashed()->find($id);
+
+        if (! $application) {
+            return $this->notFound('Application not found.');
+        }
+
+        $companyId = $this->resolveCompanyId($request);
+
+        if ($companyId !== '' && $application->jobvacancy?->companyId !== $companyId) {
+            return $this->notFound('Application not found.');
+        }
+
+        return $this->success('Application retrieved successfully.', $application);
     }
 
     public function store(Request $request): JsonResponse
@@ -114,6 +148,12 @@ class JobApplicationController extends BaseApiController
             return $this->notFound('Application not found.');
         }
 
+        $companyId = $this->resolveCompanyId(request());
+
+        if ($companyId !== '' && $application->jobvacancy?->companyId !== $companyId) {
+            return $this->notFound('Application not found.');
+        }
+
         DB::transaction(function () use ($application) {
             $application->update(['status' => 'accepted']);
         });
@@ -129,15 +169,90 @@ class JobApplicationController extends BaseApiController
 
     public function reject(string $id): JsonResponse
     {
-        $application = JobApplication::find($id);
+        $application = JobApplication::with('jobvacancy')->find($id);
 
         if (! $application) {
+            return $this->notFound('Application not found.');
+        }
+
+        $companyId = $this->resolveCompanyId(request());
+
+        if ($companyId !== '' && $application->jobvacancy?->companyId !== $companyId) {
             return $this->notFound('Application not found.');
         }
 
         $application->update(['status' => 'rejected']);
 
         return $this->success('Application rejected successfully.', $application->fresh(['user', 'resume', 'jobvacancy.company']));
+    }
+
+    public function update(Request $request, string $id): JsonResponse
+    {
+        $application = JobApplication::with('jobvacancy')->find($id);
+
+        if (! $application) {
+            return $this->notFound('Application not found.');
+        }
+
+        $companyId = $this->resolveCompanyId($request);
+
+        if ($companyId !== '' && $application->jobvacancy?->companyId !== $companyId) {
+            return $this->notFound('Application not found.');
+        }
+
+        $validator = Validator::make($request->all(), [
+            'status' => ['required', 'in:pending,accepted,rejected'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error('Validation failed.', $validator->errors(), 422);
+        }
+
+        $application->update(['status' => $request->input('status')]);
+
+        return $this->success('Application updated successfully.', $application->fresh(['user', 'resume', 'jobvacancy.company']));
+    }
+
+    public function destroy(Request $request, string $id): JsonResponse
+    {
+        $application = JobApplication::with('jobvacancy')->find($id);
+
+        if (! $application) {
+            return $this->notFound('Application not found.');
+        }
+
+        $companyId = $this->resolveCompanyId($request);
+
+        if ($companyId !== '' && $application->jobvacancy?->companyId !== $companyId) {
+            return $this->notFound('Application not found.');
+        }
+
+        $application->delete();
+
+        return $this->success('Application archived successfully.');
+    }
+
+    public function restore(Request $request, string $id): JsonResponse
+    {
+        $application = JobApplication::with(['jobvacancy'])->withTrashed()->find($id);
+
+        if (! $application) {
+            return $this->notFound('Application not found.');
+        }
+
+        $companyId = $this->resolveCompanyId($request);
+
+        if ($companyId !== '' && $application->jobvacancy?->companyId !== $companyId) {
+            return $this->notFound('Application not found.');
+        }
+
+        if (! $application->trashed()) {
+            return $this->error('Application is not archived.', [], 422);
+        }
+
+        $application->restore();
+
+        return $this->success('Application restored successfully.', $application->fresh(['user', 'resume', 'jobvacancy.company']));
     }
 
     public function uploadCV(Request $request, string $id): JsonResponse

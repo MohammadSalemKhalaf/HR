@@ -11,6 +11,17 @@ use Illuminate\Support\Facades\Validator;
 
 class DepartmentController extends BaseApiController
 {
+    private function resolvedCompanyIdForRequest(Request $request): string
+    {
+        $actingUser = $request->user();
+
+        if ($actingUser instanceof User && $actingUser->hasRole('company')) {
+            return (string) ($actingUser->company?->id ?? $actingUser->employee?->company_id ?? '');
+        }
+
+        return (string) $request->string('company_id');
+    }
+
     public function index(Request $request): JsonResponse
     {
         $query = Department::with(['company', 'manager'])->latest();
@@ -29,6 +40,23 @@ class DepartmentController extends BaseApiController
         }
 
         return $this->success('Departments retrieved successfully.', $query->get());
+    }
+
+    public function show(Request $request, string $id): JsonResponse
+    {
+        $department = Department::with(['company', 'manager'])->find($id);
+
+        if (! $department) {
+            return $this->notFound('Department not found.');
+        }
+
+        $companyId = $this->resolvedCompanyIdForRequest($request);
+
+        if ($companyId !== '' && $department->company_id !== $companyId) {
+            return $this->notFound('Department not found.');
+        }
+
+        return $this->success('Department retrieved successfully.', $department);
     }
 
     public function store(Request $request): JsonResponse
@@ -113,5 +141,65 @@ class DepartmentController extends BaseApiController
         ]);
 
         return $this->success('Department manager assigned successfully.', $department->fresh(['company', 'manager']));
+    }
+
+    public function update(Request $request, string $id): JsonResponse
+    {
+        $department = Department::find($id);
+
+        if (! $department) {
+            return $this->notFound('Department not found.');
+        }
+
+        $companyId = $this->resolvedCompanyIdForRequest($request);
+
+        if ($companyId !== '' && $department->company_id !== $companyId) {
+            return $this->notFound('Department not found.');
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name' => ['sometimes', 'string', 'max:255'],
+            'code' => ['nullable', 'string', 'max:255'],
+            'manager_employee_id' => ['nullable', 'exists:employees,id'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error('Validation failed.', $validator->errors(), 422);
+        }
+
+        if ($request->filled('manager_employee_id')) {
+            $manager = Employee::find($request->string('manager_employee_id'));
+
+            if (! $manager || $manager->company_id !== $department->company_id) {
+                return $this->error('Validation failed.', ['manager_employee_id' => ['Manager must belong to the same company.']], 422);
+            }
+        }
+
+        $department->update(array_filter([
+            'name' => $request->input('name'),
+            'code' => $request->input('code'),
+            'manager_employee_id' => $request->input('manager_employee_id'),
+        ], static fn ($value) => $value !== null));
+
+        return $this->success('Department updated successfully.', $department->fresh(['company', 'manager']));
+    }
+
+    public function destroy(Request $request, string $id): JsonResponse
+    {
+        $department = Department::find($id);
+
+        if (! $department) {
+            return $this->notFound('Department not found.');
+        }
+
+        $companyId = $this->resolvedCompanyIdForRequest($request);
+
+        if ($companyId !== '' && $department->company_id !== $companyId) {
+            return $this->notFound('Department not found.');
+        }
+
+        $department->delete();
+
+        return $this->success('Department deleted successfully.');
     }
 }

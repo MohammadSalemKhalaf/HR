@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import Login from '../pages/Login.vue'
 import adminRoutes from '../modules/admin/router/index'
 import managerRoutes from '../modules/manager/router'
+import companyRoutes from '../modules/company/router'
 import { useAuthStore } from '../stores/auth'
 
 const routes: Array<RouteRecordRaw> = [
@@ -13,6 +14,7 @@ const routes: Array<RouteRecordRaw> = [
     meta: { layout: 'auth', requiresGuest: true }
   },
   ...adminRoutes,
+  ...companyRoutes,
   ...managerRoutes,
   {
     path: '/:pathMatch(.*)*',

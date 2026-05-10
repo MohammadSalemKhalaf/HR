@@ -60,14 +60,25 @@ Route::middleware('token.auth')->group(function () {
         Route::post('companies/{id}/restore', [CompanyController::class, 'restore']);
     });
 
+    Route::middleware('role:company')->group(function () {
+        Route::get('company/profile', [CompanyController::class, 'myCompany']);
+        Route::put('company/profile', [CompanyController::class, 'updateMyCompany']);
+        Route::get('company/dashboard-stats', [CompanyController::class, 'companyDashboardStats']);
+    });
+
     Route::get('departments', [DepartmentController::class, 'index']);
     Route::post('departments', [DepartmentController::class, 'store']);
+    Route::get('departments/{id}', [DepartmentController::class, 'show']);
+    Route::put('departments/{id}', [DepartmentController::class, 'update']);
+    Route::delete('departments/{id}', [DepartmentController::class, 'destroy']);
     Route::post('departments/{id}/assign-manager', [DepartmentController::class, 'assignManager']);
 
     Route::get('employees', [EmployeeController::class, 'index']);
     Route::post('employees', [EmployeeController::class, 'store']);
     Route::get('employees/{id}', [EmployeeController::class, 'show']);
     Route::put('employees/{id}', [EmployeeController::class, 'update']);
+    Route::delete('employees/{id}', [EmployeeController::class, 'destroy']);
+    Route::post('employees/{id}/restore', [EmployeeController::class, 'restore']);
     Route::post('employees/{id}/terminate', [EmployeeController::class, 'terminate']);
     Route::post('employees/{id}/assign-manager', [EmployeeController::class, 'assignManager']);
     Route::post('employees/{id}/transfer-department', [EmployeeController::class, 'transferDepartment']);
@@ -80,9 +91,16 @@ Route::middleware('token.auth')->group(function () {
     Route::get('vacancies', [JobVacancyController::class, 'index']);
     Route::post('job-vacancies', [JobVacancyController::class, 'store']);
     Route::get('job-vacancies/{id}', [JobVacancyController::class, 'show']);
+    Route::put('job-vacancies/{id}', [JobVacancyController::class, 'update']);
+    Route::delete('job-vacancies/{id}', [JobVacancyController::class, 'destroy']);
+    Route::post('job-vacancies/{id}/restore', [JobVacancyController::class, 'restore']);
 
     Route::get('applications', [JobApplicationController::class, 'index']);
     Route::post('applications', [JobApplicationController::class, 'store']);
+    Route::get('applications/{id}', [JobApplicationController::class, 'show']);
+    Route::put('applications/{id}', [JobApplicationController::class, 'update']);
+    Route::delete('applications/{id}', [JobApplicationController::class, 'destroy']);
+    Route::post('applications/{id}/restore', [JobApplicationController::class, 'restore']);
     Route::post('applications/{id}/accept', [JobApplicationController::class, 'accept']);
     Route::post('applications/{id}/reject', [JobApplicationController::class, 'reject']);
     Route::post('applications/{id}/upload-cv', [JobApplicationController::class, 'uploadCV']);

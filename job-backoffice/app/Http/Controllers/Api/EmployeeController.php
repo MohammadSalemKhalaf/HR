@@ -36,6 +36,10 @@ class EmployeeController extends BaseApiController
             $query->where('department_id', $request->string('department_id'));
         }
 
+        if ($request->boolean('archived')) {
+            $query->onlyTrashed();
+        }
+
         return $this->success('Employees retrieved successfully.', $query->get());
     }
 
@@ -324,5 +328,55 @@ class EmployeeController extends BaseApiController
         $employee->update(['department_id' => $department->id]);
 
         return $this->success('Employee department transferred successfully.', $employee->fresh(['user', 'company', 'department', 'manager']));
+    }
+
+    public function destroy(Request $request, string $id): JsonResponse
+    {
+        $employee = Employee::find($id);
+
+        if (! $employee) {
+            return $this->notFound('Employee not found.');
+        }
+
+        $actingUser = $request->user();
+
+        if ($actingUser instanceof User && $actingUser->hasRole('company')) {
+            $companyId = (string) ($actingUser->company?->id ?? $actingUser->employee?->company_id ?? '');
+
+            if ($employee->company_id !== $companyId) {
+                return $this->notFound('Employee not found.');
+            }
+        }
+
+        $employee->delete();
+
+        return $this->success('Employee archived successfully.');
+    }
+
+    public function restore(Request $request, string $id): JsonResponse
+    {
+        $employee = Employee::withTrashed()->find($id);
+
+        if (! $employee) {
+            return $this->notFound('Employee not found.');
+        }
+
+        $actingUser = $request->user();
+
+        if ($actingUser instanceof User && $actingUser->hasRole('company')) {
+            $companyId = (string) ($actingUser->company?->id ?? $actingUser->employee?->company_id ?? '');
+
+            if ($employee->company_id !== $companyId) {
+                return $this->notFound('Employee not found.');
+            }
+        }
+
+        if (! $employee->trashed()) {
+            return $this->error('Employee is not archived.', [], 422);
+        }
+
+        $employee->restore();
+
+        return $this->success('Employee restored successfully.', $employee->fresh(['user', 'company', 'department', 'manager']));
     }
 }

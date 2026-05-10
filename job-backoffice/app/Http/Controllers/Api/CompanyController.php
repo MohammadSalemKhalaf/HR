@@ -54,11 +54,11 @@ class CompanyController extends BaseApiController
                     ->update([
                         'role_id' => $companyRoleId,
                     ]);
-            } elseif ($request->filled('email') && $request->filled('password')) {
+            } elseif ($request->filled('email')) {
                 $user = User::create([
                     'name' => $request->input('name'),
                     'email' => $request->input('email'),
-                    'password' => Hash::make($request->input('password')),
+                    'password' => Hash::make($request->input('password') ?: Str::random(12)),
                 ]);
 
                 DB::table('users')
@@ -80,6 +80,60 @@ class CompanyController extends BaseApiController
         });
 
         return $this->success('Company created successfully.', $company->load('owner'), 201);
+    }
+
+    public function myCompany(Request $request): JsonResponse
+    {
+        $actingUser = $request->user();
+        $companyId = (string) ($actingUser?->company?->id ?? $actingUser?->employee?->company_id ?? '');
+
+        if ($companyId === '') {
+            return $this->notFound('Company not found.');
+        }
+
+        $company = Company::with('owner')->find($companyId);
+
+        if (! $company) {
+            return $this->notFound('Company not found.');
+        }
+
+        return $this->success('Company retrieved successfully.', $company);
+    }
+
+    public function updateMyCompany(Request $request): JsonResponse
+    {
+        $actingUser = $request->user();
+        $companyId = (string) ($actingUser?->company?->id ?? $actingUser?->employee?->company_id ?? '');
+
+        if ($companyId === '') {
+            return $this->notFound('Company not found.');
+        }
+
+        return $this->update($request, $companyId);
+    }
+
+    public function companyDashboardStats(Request $request): JsonResponse
+    {
+        $actingUser = $request->user();
+        $companyId = (string) ($actingUser?->company?->id ?? $actingUser?->employee?->company_id ?? '');
+
+        if ($companyId === '') {
+            return $this->error('Validation failed.', ['company_id' => ['Company could not be resolved from token.']], 422);
+        }
+
+        $jobsCount = \App\Models\JobVacancy::where('companyId', $companyId)->whereNull('deleted_at')->count();
+        $applicationsCount = \App\Models\JobApplication::whereHas('jobvacancy', function ($query) use ($companyId) {
+            $query->where('companyId', $companyId);
+        })->whereNull('deleted_at')->count();
+        $departmentsCount = \App\Models\Department::where('company_id', $companyId)->count();
+        $employeesCount = \App\Models\Employee::where('company_id', $companyId)->whereNull('deleted_at')->count();
+
+        return $this->success('Company dashboard stats retrieved successfully.', [
+            'jobs' => $jobsCount,
+            'applications' => $applicationsCount,
+            'departments' => $departmentsCount,
+            'employees' => $employeesCount,
+        ]);
     }
 
     public function update(Request $request, string $id): JsonResponse
