@@ -52,16 +52,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import AppLayout from '@/layouts/AppLayout.vue'
+import api from '@/api/axios'
 
 const stats = ref({ departmentsCount: 0, employeesCount: 0, pendingLeaves: 0, todayAttendance: 0 })
 
 async function fetchStats() {
   try {
-    const res = await fetch('/api/manager/stats')
-    if (!res.ok) throw new Error('Fetch failed')
-    const data = await res.json()
-    Object.assign(stats.value, data)
-  } catch (err) { console.error(err) }
+    const res = await api.get('/manager/dashboard-stats')
+    Object.assign(stats.value, res.data)
+  } catch (err) { console.error('Error loading dashboard stats:', err) }
 }
 
 onMounted(() => fetchStats())

@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\EmployeeTask;
+use App\Notifications\TaskAssigned;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\ValidationException;
 
@@ -93,7 +95,7 @@ class ManagerTaskController extends Controller
             'due_date' => ['nullable', 'date'],
         ]);
 
-        $employee = Employee::find($validated['employee_id']);
+        $employee = Employee::with('user')->find($validated['employee_id']);
         if (! $employee || ! in_array($employee->department_id, $deptIds)) {
             abort(403);
         }
@@ -109,6 +111,16 @@ class ManagerTaskController extends Controller
             'priority' => $validated['priority'],
             'due_date' => $validated['due_date'] ?? null,
         ]);
+
+        try {
+            $recipient = $employee->user;
+
+            if ($recipient) {
+                Notification::send($recipient, new TaskAssigned($task));
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return response()->json([
             'message' => 'Task created successfully.',

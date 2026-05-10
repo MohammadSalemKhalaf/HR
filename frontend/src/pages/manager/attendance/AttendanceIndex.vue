@@ -76,6 +76,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import AppLayout from '@/layouts/AppLayout.vue'
+import api from '@/api/axios'
 
 const selectedDate = ref(new Date().toISOString().split('T')[0])
 const records = ref<any[]>([])
@@ -90,10 +91,9 @@ async function filterByDate() {
 
 async function fetchRecords() {
   try {
-    const res = await fetch(`/api/manager/attendance?date=${selectedDate.value}`)
-    if (!res.ok) throw new Error('Fetch failed')
-    records.value = await res.json()
-  } catch (err) { console.error(err) }
+    const res = await api.get('/manager/attendance', { params: { date: selectedDate.value } })
+    records.value = res.data?.data || res.data || []
+  } catch (err) { console.error('Error loading attendance records:', err) }
 }
 
 onMounted(() => fetchRecords())

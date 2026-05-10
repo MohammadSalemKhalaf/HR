@@ -67,6 +67,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import AppLayout from '@/layouts/AppLayout.vue'
+import api from '@/api/axios'
 
 const leaves = ref<any[]>([])
 
@@ -81,24 +82,23 @@ function formatDate(date: string) {
 
 async function approveLeave(id: number) {
   try {
-    await fetch(`/api/manager/leaves/${id}/approve`, { method: 'POST' })
+    await api.post(`/manager/leaves/${id}/approve`)
     await fetchLeaves()
-  } catch (err) { console.error(err) }
+  } catch (err) { console.error('Error approving leave:', err) }
 }
 
 async function rejectLeave(id: number) {
   try {
-    await fetch(`/api/manager/leaves/${id}/reject`, { method: 'POST' })
+    await api.post(`/manager/leaves/${id}/reject`)
     await fetchLeaves()
-  } catch (err) { console.error(err) }
+  } catch (err) { console.error('Error rejecting leave:', err) }
 }
 
 async function fetchLeaves() {
   try {
-    const res = await fetch('/api/manager/leaves')
-    if (!res.ok) throw new Error('Fetch failed')
-    leaves.value = await res.json()
-  } catch (err) { console.error(err) }
+    const res = await api.get('/manager/leaves')
+    leaves.value = res.data?.data || res.data || []
+  } catch (err) { console.error('Error loading leaves:', err) }
 }
 
 onMounted(() => fetchLeaves())

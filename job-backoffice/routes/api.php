@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\HelperController;
 use App\Http\Controllers\Api\ManagerTaskController;
+use App\Http\Controllers\Api\ManagerApiController;
 use App\Http\Controllers\Api\JobApplicationController;
 use App\Http\Controllers\Api\JobVacancyController;
 use App\Http\Controllers\Api\LeaveController;
@@ -117,6 +118,19 @@ Route::middleware('token.auth')->group(function () {
         Route::post('tasks', [ManagerTaskController::class, 'store']);
         Route::put('tasks/{id}', [ManagerTaskController::class, 'update']);
         Route::delete('tasks/{id}', [ManagerTaskController::class, 'destroy']);
+
+        Route::get('dashboard-stats', [ManagerApiController::class, 'getDashboardStats']);
+        Route::get('departments', [ManagerApiController::class, 'getDepartments']);
+        Route::get('departments/{id}', [ManagerApiController::class, 'getDepartment']);
+        Route::get('departments/{id}/employees', [ManagerApiController::class, 'getDepartmentEmployees']);
+        Route::get('employees', [ManagerApiController::class, 'getEmployees']);
+        Route::get('employees/{id}', [ManagerApiController::class, 'getEmployee']);
+        Route::get('leaves', [ManagerApiController::class, 'getLeaves']);
+        Route::post('leaves/{id}/approve', [ManagerApiController::class, 'approveLeave']);
+        Route::post('leaves/{id}/reject', [ManagerApiController::class, 'rejectLeave']);
+        Route::get('attendance', [ManagerApiController::class, 'getAttendance']);
+        Route::get('department-notifications/meta', [ManagerApiController::class, 'getNotificationMeta']);
+        Route::post('department-notifications', [ManagerApiController::class, 'sendDepartmentNotification']);
     });
 
     Route::get('helpers/me', [HelperController::class, 'me']);

@@ -2,7 +2,7 @@
     <div class="greeting">Hello {{ $employee->name }},</div>
 
     <div class="description">
-        You have been assigned a new task by <strong>{{ $manager->user->name ?? 'Your Manager' }}</strong>:
+        Your manager <strong>{{ $manager->user->name ?? 'Your Manager' }}</strong> has assigned you a new task
         from <strong>{{ $company->name ?? 'Karaaj' }}</strong>.
     </div>
 
@@ -31,7 +31,7 @@
         @endif
         @if($task->due_date)
             <div class="info-row">
-                <div class="info-label">Due Date:</div>
+                <div class="info-label">Deadline:</div>
                 <div class="info-value">{{ $task->due_date->format('F d, Y') }} ({{ $task->due_date->diffForHumans(now(), ['parts' => 1]) }})</div>
             </div>
         @endif

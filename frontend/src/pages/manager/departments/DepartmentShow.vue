@@ -80,6 +80,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLayout from '@/layouts/AppLayout.vue'
+import api from '@/api/axios'
 
 const route = useRoute()
 const department = ref<any>({})
@@ -93,9 +94,8 @@ function capital(val: string) {
 async function fetchDepartment() {
   try {
     const id = route.params.id
-    const res = await fetch(`/api/manager/departments/${id}`)
-    if (!res.ok) throw new Error('Fetch failed')
-    const data = await res.json()
+    const res = await api.get(`/manager/departments/${id}`)
+    const data = res.data
     department.value = data.department || data
     employees.value = data.employees || []
   } catch (err) { console.error(err) }

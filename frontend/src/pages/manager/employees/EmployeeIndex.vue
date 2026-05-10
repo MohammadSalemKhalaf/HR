@@ -56,6 +56,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import AppLayout from '@/layouts/AppLayout.vue'
+import api from '@/api/axios'
 
 const employees = ref<any[]>([])
 
@@ -66,10 +67,9 @@ function capital(val: string) {
 
 async function fetchEmployees() {
   try {
-    const res = await fetch('/api/manager/employees')
-    if (!res.ok) throw new Error('Fetch failed')
-    employees.value = await res.json()
-  } catch (err) { console.error(err) }
+    const res = await api.get('/manager/employees')
+    employees.value = res.data?.data || res.data || []
+  } catch (err) { console.error('Error loading employees:', err) }
 }
 
 onMounted(() => fetchEmployees())

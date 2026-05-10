@@ -38,15 +38,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import AppLayout from '@/layouts/AppLayout.vue'
+import api from '@/api/axios'
 
 const departments = ref<any[]>([])
 
 async function fetchDepartments() {
   try {
-    const res = await fetch('/api/manager/departments')
-    if (!res.ok) throw new Error('Fetch failed')
-    departments.value = await res.json()
-  } catch (err) { console.error(err) }
+    const res = await api.get('/manager/departments')
+    departments.value = res.data?.data || res.data || []
+  } catch (err) { console.error('Error loading departments:', err) }
 }
 
 onMounted(() => fetchDepartments())

@@ -27,10 +27,7 @@
               <div>
                 <label for="type" class="mb-2 block text-sm font-medium text-slate-700">Notification Type</label>
                 <select v-model="form.type" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">
-                  <option value="general_announcement">General Announcement</option>
-                  <option value="urgent">Urgent</option>
-                  <option value="reminder">Reminder</option>
-                  <option value="update">Update</option>
+                  <option v-for="(label, key) in notificationTypes" :key="key" :value="key">{{ label }}</option>
                 </select>
               </div>
             </div>
@@ -76,8 +73,17 @@
             </div>
 
             <div class="flex items-center gap-3">
-              <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-700">Send Notification</button>
-              <button type="reset" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Reset</button>
+              <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-700" :disabled="submitting">
+                {{ submitting ? 'Sending...' : 'Send Notification' }}
+              </button>
+              <button type="button" @click="resetForm" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Reset</button>
+            </div>
+
+            <div v-if="errorMessage" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {{ errorMessage }}
+            </div>
+            <div v-if="successMessage" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+              {{ successMessage }}
             </div>
 
             <div class="text-xs text-slate-500">
@@ -115,10 +121,15 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import AppLayout from '@/layouts/AppLayout.vue'
+import api from '@/api/axios'
 
 const departments = ref<any[]>([])
 const departmentEmployees = ref<any[]>([])
 const selectedDepartment = ref<any | null>(null)
+const notificationTypes = ref<Record<string, string>>({})
+const submitting = ref(false)
+const successMessage = ref('')
+const errorMessage = ref('')
 const form = ref({
   department_id: '',
   type: 'general_announcement',
@@ -130,11 +141,19 @@ const form = ref({
 
 async function fetchDepartments() {
   try {
-    const res = await fetch('/api/manager/departments')
-    if (!res.ok) throw new Error('Fetch failed')
-    departments.value = await res.json()
+    const res = await api.get('/manager/department-notifications/meta')
+    const meta = res.data || {}
+    departments.value = meta.departments || []
+    notificationTypes.value = meta.notificationTypes || {}
+
+    if (!notificationTypes.value[form.value.type]) {
+      const firstType = Object.keys(notificationTypes.value)[0]
+      form.value.type = firstType || 'general_announcement'
+    }
+
     if (departments.value.length > 0) {
-      form.value.department_id = departments.value[0].id
+      form.value.department_id = meta.selectedDepartmentId || departments.value[0].id
+      selectedDepartment.value = meta.selectedDepartment || null
       await fetchDepartmentEmployees()
     }
   } catch (err) { console.error(err) }
@@ -144,25 +163,61 @@ async function fetchDepartmentEmployees() {
   try {
     const id = form.value.department_id
     if (!id) return
-    const res = await fetch(`/api/manager/departments/${id}/employees`)
-    if (!res.ok) throw new Error('Fetch failed')
-    const data = await res.json()
+    const res = await api.get(`/manager/departments/${id}/employees`)
+    const data = res.data
     departmentEmployees.value = data.employees || data
     selectedDepartment.value = data.department || null
   } catch (err) { console.error(err) }
 }
 
 async function submit() {
+  submitting.value = true
+  successMessage.value = ''
+  errorMessage.value = ''
+
   try {
-    const res = await fetch('/api/manager/department-notifications', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form.value)
-    })
-    if (!res.ok) throw new Error('Send failed')
-    alert('Notification sent successfully!')
-    form.value = { department_id: form.value.department_id, type: 'general_announcement', title: '', message: '', recipient_mode: 'all', employee_ids: [] }
-  } catch (err) { console.error(err) }
+    const payload: any = {
+      department_id: form.value.department_id,
+      type: form.value.type,
+      title: form.value.title,
+      message: form.value.message,
+      recipient_mode: form.value.recipient_mode
+    }
+
+    if (form.value.recipient_mode === 'specific') {
+      payload.employee_ids = form.value.employee_ids
+    }
+
+    const res = await api.post('/manager/department-notifications', payload)
+    successMessage.value = res.data?.message || 'Notification sent successfully.'
+    const firstType = Object.keys(notificationTypes.value)[0] || 'general_announcement'
+    form.value = {
+      department_id: form.value.department_id,
+      type: firstType,
+      title: '',
+      message: '',
+      recipient_mode: 'all',
+      employee_ids: []
+    }
+  } catch (err: any) {
+    console.error(err)
+    errorMessage.value = err?.response?.data?.message || 'Failed to send notification.'
+  } finally {
+    submitting.value = false
+  }
+}
+
+function resetForm() {
+  successMessage.value = ''
+  errorMessage.value = ''
+  form.value = {
+    department_id: form.value.department_id,
+    type: Object.keys(notificationTypes.value)[0] || 'general_announcement',
+    title: '',
+    message: '',
+    recipient_mode: 'all',
+    employee_ids: []
+  }
 }
 
 watch(() => form.value.department_id, () => fetchDepartmentEmployees())

@@ -220,19 +220,13 @@ export const useAuthStore = defineStore('auth', {
     async logout() {
       this.loading = true
       console.log('[Auth] Logout initiated')
-      try {
-        await api.post('/auth/logout').catch((e) => {
-          console.warn('[Auth] Logout API call failed (non-critical):', e.message)
-        })
-      } finally {
-        this.user = null
-        this.token = null
-        this.error = null
-        clearAuthToken()
-        this.loading = false
-        console.log('[Auth] ✓ Logout complete, redirecting to login')
-        window.location.href = '/login'
-      }
+      this.user = null
+      this.token = null
+      this.error = null
+      clearAuthToken()
+      this.loading = false
+      console.log('[Auth] ✓ Logout complete, redirecting to login')
+      window.location.href = '/login'
     },
 
     /**
