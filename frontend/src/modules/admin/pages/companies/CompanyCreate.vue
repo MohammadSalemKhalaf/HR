@@ -41,6 +41,31 @@
           </div>
         </div>
 
+        <div class="grid gap-6 md:grid-cols-2">
+          <div>
+            <label class="mb-2 block text-sm font-semibold text-slate-700">Owner Email (used for login)</label>
+            <input
+              v-model="form.email"
+              type="email"
+              class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+              :class="{ 'border-rose-300 bg-rose-50': errors.email }"
+            >
+            <p v-if="errors.email" class="mt-2 text-sm text-rose-600">{{ errors.email }}</p>
+          </div>
+
+          <div>
+            <label class="mb-2 block text-sm font-semibold text-slate-700">Owner Password (optional)</label>
+            <input
+              v-model="form.password"
+              type="password"
+              placeholder="Leave empty to auto-generate"
+              class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+              :class="{ 'border-rose-300 bg-rose-50': errors.password }"
+            >
+            <p v-if="errors.password" class="mt-2 text-sm text-rose-600">{{ errors.password }}</p>
+          </div>
+        </div>
+
         <div>
           <label class="mb-2 block text-sm font-semibold text-slate-700">Address</label>
           <input
@@ -105,6 +130,10 @@ const form = ref({
   website: ''
 })
 
+// owner email/password for company user
+form.value.email = ''
+form.value.password = ''
+
 const firstError = (value: unknown): string => {
   if (Array.isArray(value)) {
     return String(value[0] ?? '')
@@ -122,7 +151,9 @@ const createCompany = async () => {
       name: form.value.name,
       address: form.value.address,
       industry: form.value.industry,
-      website: form.value.website || null
+      website: form.value.website || null,
+      email: form.value.email || null,
+      password: form.value.password || null,
     })
 
     router.push('/admin/companies')

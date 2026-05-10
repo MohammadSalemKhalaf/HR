@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 
 class CompanyController extends BaseApiController
@@ -97,10 +98,43 @@ class CompanyController extends BaseApiController
             'industry' => ['sometimes', 'string', 'max:255'],
             'website' => ['nullable', 'string', 'max:255', Rule::unique('companies', 'website')->ignore($company?->id)],
             'owner_id' => ['sometimes', 'nullable', 'exists:users,id'],
+            'email' => ['sometimes', 'nullable', 'email', 'max:255'],
         ]);
 
         if ($validator->fails()) {
             return $this->error('Validation failed.', $validator->errors(), 422);
+        }
+
+        // If an email was provided, ensure there's a user for that email and assign as owner
+        $ownerId = $request->input('owner_id');
+
+        if ($request->filled('email')) {
+            $companyRoleId = User::roleIdFor('company');
+
+            $user = User::where('email', $request->input('email'))->first();
+
+            if (! $user) {
+                $user = User::create([
+                    'name' => $request->input('name') ?: $company->name,
+                    'email' => $request->input('email'),
+                    'password' => Hash::make(Str::random(12)),
+                ]);
+
+                DB::table('users')
+                    ->where('id', $user->id)
+                    ->update([
+                        'role_id' => $companyRoleId,
+                    ]);
+            } else {
+                // ensure role is set to company role
+                DB::table('users')
+                    ->where('id', $user->id)
+                    ->update([
+                        'role_id' => $companyRoleId,
+                    ]);
+            }
+
+            $ownerId = $user->id;
         }
 
         $company->update(array_filter([
@@ -108,7 +142,7 @@ class CompanyController extends BaseApiController
             'address' => $request->input('address'),
             'industry' => $request->input('industry'),
             'website' => $request->input('website'),
-            'ownerId' => $request->input('owner_id'),
+            'ownerId' => $ownerId,
         ], static fn ($value) => $value !== null));
 
         return $this->success('Company updated successfully.', $company->fresh('owner'));
