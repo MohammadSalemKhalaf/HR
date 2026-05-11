@@ -10,7 +10,9 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class JobApplicationController extends BaseApiController
 {
@@ -65,6 +67,7 @@ class JobApplicationController extends BaseApiController
             'job_vacancy_id' => ['required', 'exists:job_vacancies,id'],
             'resume_id' => ['nullable'],
             'cv_file' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:5120'],
+            'cv_text' => ['nullable', 'string'],
         ]);
 
         if ($validator->fails()) {
@@ -75,14 +78,15 @@ class JobApplicationController extends BaseApiController
         $jobVacancyId = $request->string('job_vacancy_id');
         $providedResumeId = $request->input('resume_id');
         $cvFile = $request->file('cv_file');
+        $cvText = trim((string) $request->input('cv_text', ''));
     // Convert Stringable objects to plain strings
     $userId = (string) $userId;
     $jobVacancyId = (string) $jobVacancyId;
 
 
-        // Require at least one: resume_id or cv_file
-        if (! $providedResumeId && ! $cvFile) {
-            return $this->error('Either resume_id or cv_file must be provided.', null, 422);
+        // Require at least one: resume_id, cv_file, or cv_text
+        if (! $providedResumeId && ! $cvFile && $cvText === '') {
+            return $this->error('Either resume_id, cv_file, or cv_text must be provided.', null, 422);
         }
 
         $resumeId = null;
@@ -101,7 +105,7 @@ class JobApplicationController extends BaseApiController
                 'education' => 'N/A',
                 'experience' => 'N/A',
                 'skills' => 'N/A',
-                'summary' => 'Uploaded resume file during application.',
+                'summary' => $cvText !== '' ? Str::limit($cvText, 255, '') : 'Uploaded resume file during application.',
             ]);
 
             $resumeId = $resume->id;
@@ -128,36 +132,39 @@ class JobApplicationController extends BaseApiController
             return $this->error('You have already applied to this vacancy.', null, 409);
         }
 
-        // Attempt to compute an AI match score using resume fields (simple local heuristic)
-        $aiScore = 0;
-        $aiFeedback = null;
+        $job = JobVacancy::with(['company', 'jobcategory'])->find($jobVacancyId);
 
-        if ($resumeId) {
+        if (! $job) {
+            return $this->notFound('Job vacancy not found.');
+        }
+
+        $analysisText = $cvText;
+
+        if ($analysisText === '' && $resumeId) {
             $resumeRecord = Resume::find($resumeId);
-            if ($resumeRecord) {
-                $analysis = [
-                    'summary' => $resumeRecord->summary ?? '',
-                    'skills' => $resumeRecord->skills ?? '',
-                    'experience' => $resumeRecord->experience ?? '',
-                    'education' => $resumeRecord->education ?? '',
-                ];
 
-                $aiData = $this->buildApplicationAiData($analysis);
-                $aiScore = $aiData['score'];
-                $aiFeedback = $aiData['feedback'];
+            if ($resumeRecord) {
+                $analysisText = implode("\n\n", array_filter([
+                    $resumeRecord->summary ?? '',
+                    $resumeRecord->skills ?? '',
+                    $resumeRecord->experience ?? '',
+                    $resumeRecord->education ?? '',
+                ]));
             }
         }
 
+        $aiData = $this->generateJobMatchFeedback($analysisText, $job);
+
         $application = JobApplication::create([
             'status' => 'pending',
-            'aiGeneratedScore' => $aiScore,
-            'aiGeneratedFeedback' => $aiFeedback,
+            'aiGeneratedScore' => $aiData['score'],
+            'aiGeneratedFeedback' => $aiData['feedback'],
             'userId' => $userId,
             'resumeId' => $resumeId,
             'jobVacancyId' => $jobVacancyId,
         ]);
 
-        return $this->success('Application created successfully.', $application->load(['user', 'resume', 'jobvacancy.company']), 201);
+        return $this->success('Application created successfully.', $application->load(['user', 'resume', 'jobvacancy.company', 'jobvacancy.jobcategory']), 201);
     }
 
     public function accept(string $id): JsonResponse
@@ -233,30 +240,236 @@ class JobApplicationController extends BaseApiController
         return $this->success('Application updated successfully.', $application->fresh(['user', 'resume', 'jobvacancy.company']));
     }
 
-    private function buildApplicationAiData(array $analysis): array
+    private function generateJobMatchFeedback(string $resumeText, JobVacancy $job): array
     {
-        $fields = [
-            $analysis['summary'] ?? '',
-            $analysis['skills'] ?? '',
-            $analysis['experience'] ?? '',
-            $analysis['education'] ?? '',
-        ];
+        $apiKey = env('GROQ_API_KEY');
 
-        $filledFields = count(array_filter($fields, static fn ($value) => trim((string) $value) !== ''));
-        $score = round(($filledFields / 4) * 10, 1);
+        if ($apiKey) {
+            try {
+                $prompt = <<<'PROMPT'
+Compare the candidate resume with the job vacancy and return a strict JSON object.
 
-        $feedback = match ($filledFields) {
-            4 => 'Resume analysis is complete and ready for review.',
-            3 => 'Resume analysis is mostly complete and ready for review.',
-            2 => 'Resume analysis is partial. The candidate profile may need more detail.',
-            1 => 'Resume analysis returned limited information.',
-            default => 'Resume analysis returned no usable information.',
-        };
+Candidate Resume:
+{{RESUME}}
+
+Job Vacancy:
+{{JOB}}
+
+Evaluate the fit using actual overlapping skills, tools, and experience.
+
+Return ONLY valid JSON in this exact shape:
+{
+  "score": 0-10,
+  "feedback": "2-3 concise sentences that mention matched skills, missing skills, and overall fit"
+}
+
+Rules:
+- The score must reflect the actual match between resume and job requirements.
+- Mention specific skills that matched and specific gaps that are missing.
+- Do not use generic phrases like 'good candidate' or 'ready for review'.
+PROMPT;
+
+                $prompt = str_replace('{{RESUME}}', $resumeText, $prompt);
+                $prompt = str_replace('{{JOB}}', $this->buildJobText($job), $prompt);
+
+                $response = Http::timeout(45)
+                    ->retry(2, 500)
+                    ->withHeaders([
+                        'Authorization' => 'Bearer ' . $apiKey,
+                        'Content-Type' => 'application/json',
+                    ])
+                    ->post('https://api.groq.com/openai/v1/chat/completions', [
+                        'model' => env('GROQ_MODEL', 'llama-3.3-70b-versatile'),
+                        'temperature' => 0.2,
+                        'max_tokens' => 400,
+                        'messages' => [
+                            [
+                                'role' => 'user',
+                                'content' => $prompt,
+                            ],
+                        ],
+                    ]);
+
+                if ($response->successful()) {
+                    $content = $response->json('choices.0.message.content');
+
+                    if (is_string($content) && trim($content) !== '') {
+                        $decoded = json_decode($this->sanitizeJson($content), true);
+
+                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                            $feedback = $this->normalizeFeedback($decoded['feedback'] ?? '');
+
+                            if ($feedback !== '') {
+                                return [
+                                    'score' => $this->normalizeScore($decoded['score'] ?? 0),
+                                    'feedback' => $feedback,
+                                ];
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Fall through to local matching.
+            }
+        }
+
+        return $this->buildApplicationAiData($resumeText, $job);
+    }
+
+    private function buildApplicationAiData(string $resumeText, JobVacancy $job): array
+    {
+        $resumeSkills = $this->extractSkills($resumeText);
+        $jobSkills = $this->extractSkills($this->buildJobText($job));
+
+        $matchedSkills = array_values(array_intersect($jobSkills, $resumeSkills));
+        $missingSkills = array_values(array_diff($jobSkills, $resumeSkills));
+
+        $resumeLengthBoost = min(1.5, max(0, strlen($this->normalizeText($resumeText)) / 2000));
+        $coverage = count($jobSkills) > 0 ? count($matchedSkills) / count($jobSkills) : 0.35;
+        $score = round(min(10, max(0, ($coverage * 8.5) + $resumeLengthBoost)), 1);
+
+        if (count($matchedSkills) === 0 && strlen(trim($resumeText)) > 0) {
+            $score = min($score, 4.5);
+        }
+
+        $feedbackParts = [];
+
+        if ($matchedSkills !== []) {
+            $feedbackParts[] = 'Matched skills: ' . implode(', ', array_slice($matchedSkills, 0, 5)) . '.';
+        }
+
+        if ($missingSkills !== []) {
+            $feedbackParts[] = 'Missing key requirements: ' . implode(', ', array_slice($missingSkills, 0, 4)) . '.';
+        }
+
+        if ($feedbackParts === []) {
+            $feedbackParts[] = 'The resume provides limited evidence of a direct match with this role.';
+        }
+
+        $feedbackParts[] = $score >= 7
+            ? 'Overall, this is a strong match for the role.'
+            : ($score >= 5 ? 'Overall, this is a partial match and would benefit from a few more relevant skills.' : 'Overall, this is a weak match for the role as written.');
 
         return [
             'score' => $score,
-            'feedback' => $feedback,
+            'feedback' => implode(' ', $feedbackParts),
         ];
+    }
+
+    private function extractSkills(string $text): array
+    {
+        $haystack = $this->normalizeText($text);
+
+        $skills = [
+            'php', 'laravel', 'vue', 'react', 'angular', 'javascript', 'typescript', 'node', 'node.js',
+            'html', 'css', 'tailwind', 'bootstrap', 'sql', 'mysql', 'postgres', 'postgresql', 'mongodb',
+            'api', 'rest', 'graphql', 'docker', 'kubernetes', 'aws', 'git', 'testing', 'unit testing',
+            'leadership', 'communication', 'problem solving', 'project management', 'figma', 'ui ux',
+            'devops', 'ci cd', 'agile', 'scrum', 'python', 'java', 'c#', 'dotnet', 'mobile', 'android', 'ios'
+        ];
+
+        $matched = [];
+
+        foreach ($skills as $skill) {
+            if (str_contains($haystack, $skill)) {
+                $matched[] = $skill;
+            }
+        }
+
+        return array_values(array_unique($matched));
+    }
+
+    private function normalizeText(string $text): string
+    {
+        $normalized = strtolower($text);
+        $normalized = preg_replace('/[^a-z0-9\+\#\.\-\s]/', ' ', $normalized) ?? $normalized;
+        $normalized = preg_replace('/\s+/', ' ', $normalized) ?? $normalized;
+
+        return trim($normalized);
+    }
+
+    private function buildJobText(JobVacancy $job): string
+    {
+        $parts = [];
+        $parts[] = 'Title: ' . $job->title;
+
+        if (! empty($job->description)) {
+            $parts[] = 'Description: ' . $job->description;
+        }
+
+        if (! empty($job->location)) {
+            $parts[] = 'Location: ' . $job->location;
+        }
+
+        if (! empty($job->type)) {
+            $parts[] = 'Type: ' . $job->type;
+        }
+
+        if (! empty($job->jobcategory?->name)) {
+            $parts[] = 'Category: ' . $job->jobcategory->name;
+        }
+
+        if (! empty($job->company?->name)) {
+            $parts[] = 'Company: ' . $job->company->name;
+        }
+
+        return implode("\n\n", $parts);
+    }
+
+    private function normalizeScore(mixed $score): float
+    {
+        if (! is_numeric($score)) {
+            return 0;
+        }
+
+        $num = (float) $score;
+
+        if ($num > 10 && $num <= 100) {
+            $num /= 10;
+        }
+
+        return min(10, max(0, round($num, 1)));
+    }
+
+    private function normalizeFeedback(mixed $feedback): string
+    {
+        if (! is_string($feedback)) {
+            return '';
+        }
+
+        $trimmed = trim($feedback);
+
+        if ($trimmed === '') {
+            return '';
+        }
+
+        $genericPatterns = [
+            'Resume analysis is complete',
+            'Resume analysis is',
+            'Analysis completed',
+            'Good candidate',
+            'ready for review',
+        ];
+
+        foreach ($genericPatterns as $pattern) {
+            if (stripos($trimmed, $pattern) !== false) {
+                return '';
+            }
+        }
+
+        return $trimmed;
+    }
+
+    private function sanitizeJson(string $content): string
+    {
+        $trimmed = trim($content);
+
+        if (str_starts_with($trimmed, '```')) {
+            $trimmed = preg_replace('/^```(?:json)?\s*/', '', $trimmed) ?? $trimmed;
+            $trimmed = preg_replace('/\s*```$/', '', $trimmed) ?? $trimmed;
+        }
+
+        return trim($trimmed);
     }
 
     public function destroy(Request $request, string $id): JsonResponse

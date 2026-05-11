@@ -24,11 +24,35 @@ class JobVacancyController extends BaseApiController
 
     public function index(Request $request): JsonResponse
     {
-        $query = JobVacancy::with('company')->latest();
+        $query = JobVacancy::with(['company', 'jobcategory'])->latest();
         $companyId = $this->resolveCompanyId($request);
 
         if ($companyId !== '') {
             $query->where('companyId', $companyId);
+        }
+
+        if ($request->filled('search')) {
+            $search = trim((string) $request->input('search'));
+
+            $query->where(function ($builder) use ($search) {
+                $builder->where('title', 'like', "%{$search}%")
+                    ->orWhere('location', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('company', function ($companyBuilder) use ($search) {
+                        $companyBuilder->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('jobcategory', function ($categoryBuilder) use ($search) {
+                        $categoryBuilder->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->input('type'));
+        }
+
+        if ($request->filled('category')) {
+            $query->where('categoryId', $request->input('category'));
         }
 
         if ($request->boolean('archived')) {
@@ -76,7 +100,7 @@ class JobVacancyController extends BaseApiController
             'companyId' => $resolvedCompanyId,
         ]);
 
-        return $this->success('Job vacancy created successfully.', $jobVacancy->load('company'), 201);
+        return $this->success('Job vacancy created successfully.', $jobVacancy->load(['company', 'jobcategory']), 201);
     }
 
     public function show(Request $request, string $id): JsonResponse
@@ -93,7 +117,7 @@ class JobVacancyController extends BaseApiController
             return $this->notFound('Job vacancy not found.');
         }
 
-        return $this->success('Job vacancy retrieved successfully.', $jobVacancy);
+        return $this->success('Job vacancy retrieved successfully.', $jobVacancy->load(['company', 'jobcategory']));
     }
 
     public function update(Request $request, string $id): JsonResponse
@@ -132,7 +156,7 @@ class JobVacancyController extends BaseApiController
             'categoryId' => $request->input('category_id'),
         ], static fn ($value) => $value !== null));
 
-        return $this->success('Job vacancy updated successfully.', $jobVacancy->fresh('company'));
+        return $this->success('Job vacancy updated successfully.', $jobVacancy->fresh(['company', 'jobcategory']));
     }
 
     public function destroy(Request $request, string $id): JsonResponse
@@ -174,6 +198,6 @@ class JobVacancyController extends BaseApiController
 
         $jobVacancy->restore();
 
-        return $this->success('Job vacancy restored successfully.', $jobVacancy->fresh('company'));
+        return $this->success('Job vacancy restored successfully.', $jobVacancy->fresh(['company', 'jobcategory']));
     }
 }

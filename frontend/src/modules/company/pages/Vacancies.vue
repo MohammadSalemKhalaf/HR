@@ -266,6 +266,19 @@
                     <input v-model="form.salary" class="form-input" placeholder="e.g. $3,000 – $4,500 / mo" />
                   </div>
 
+                  <div class="form-group">
+                    <label class="form-label">
+                      <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                      </svg>
+                      Category
+                    </label>
+                    <select v-model="form.category_id" class="form-input form-select">
+                      <option value="">Select a category</option>
+                      <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+                    </select>
+                  </div>
+
                   <div class="form-group form-group--full">
                     <label class="form-label">
                       <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -365,8 +378,10 @@ const currentPage  = ref(1)
 const pagination   = ref({ current_page: 1, last_page: 1 })
 
 const form = ref({
-  title: '', location: '', type: 'full-time', salary: '', description: '',
+  title: '', location: '', type: 'full-time', salary: '', description: '', category_id: '',
 })
+
+const categories = ref<any[]>([])
 
 // ── Computed Stats ────────────────────────────────────
 const fullTimeCount = computed(() => vacancies.value.filter(j => j.type === 'full-time').length)
@@ -394,6 +409,16 @@ function typeClass(type: string) {
 }
 
 // ── Data ──────────────────────────────────────────────
+const loadCategories = async () => {
+  try {
+    const res = await api.get('/job-categories')
+    categories.value = res.data?.data || []
+  } catch (error) {
+    console.error('Error loading categories:', error)
+    categories.value = []
+  }
+}
+
 const load = async () => {
   const res = await api.get('/vacancies', {
     params: { archived: showArchived.value ? 'true' : 'false', page: currentPage.value },
@@ -409,7 +434,7 @@ const load = async () => {
 // ── Modal ─────────────────────────────────────────────
 const openCreate = () => {
   editing.value = null
-  form.value = { title: '', location: '', type: 'full-time', salary: '', description: '' }
+  form.value = { title: '', location: '', type: 'full-time', salary: '', description: '', category_id: '' }
   showModal.value = true
 }
 const openEdit = (job: any) => {
@@ -420,6 +445,7 @@ const openEdit = (job: any) => {
     type:        job.type        || 'full-time',
     salary:      job.salary      || '',
     description: job.description || '',
+    category_id: job.category_id || job.categoryId || '',
   }
   showModal.value = true
 }
@@ -459,7 +485,10 @@ const nextPage = () => { if (currentPage.value < pagination.value.last_page) cur
 const prevPage = () => { if (currentPage.value > 1) currentPage.value-- }
 
 watch([showArchived, currentPage], load)
-onMounted(load)
+onMounted(async () => {
+  await loadCategories()
+  await load()
+})
 </script>
 
 <style scoped>

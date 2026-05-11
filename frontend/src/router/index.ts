@@ -5,6 +5,7 @@ import managerRoutes from '../modules/manager/router'
 import companyRoutes from '../modules/company/router'
 import employeeRoutes from '../modules/employee/router'
 import jobsRoutes from '../modules/jobs/router'
+import { jobSeekerRoutes } from '../modules/jobseeker/router'
 import { useAuthStore } from '../stores/auth'
 
 const routes: Array<RouteRecordRaw> = [
@@ -20,6 +21,7 @@ const routes: Array<RouteRecordRaw> = [
   ...managerRoutes,
   ...employeeRoutes,
   ...jobsRoutes,
+  ...jobSeekerRoutes,
   {
     path: '/:pathMatch(.*)*',
     redirect: '/login'
@@ -61,6 +63,17 @@ router.beforeEach(async (to, from, next) => {
     // Role-based access control
     if (to.meta.role) {
       const requiredRoles = Array.isArray(to.meta.role) ? to.meta.role : [to.meta.role]
+      const userRole = auth.user?.role
+
+      if (!requiredRoles.includes(userRole)) {
+        console.warn(`Access denied: User role '${userRole}' does not match required roles:`, requiredRoles)
+        return next({ name: 'Login' })
+      }
+    }
+
+    // Handle roles array (for job seeker and other new roles)
+    if (to.meta.roles) {
+      const requiredRoles = Array.isArray(to.meta.roles) ? to.meta.roles : [to.meta.roles]
       const userRole = auth.user?.role
 
       if (!requiredRoles.includes(userRole)) {

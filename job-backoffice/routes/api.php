@@ -26,6 +26,8 @@ Route::prefix('auth')->group(function () {
     Route::middleware('token.auth')->get('me', [AuthController::class, 'me']);
 });
 
+Route::get('job-categories', [JobCategoryController::class, 'index']);
+
 Route::middleware('token.auth')->group(function () {
     Route::get('me', [AuthController::class, 'me']);
 
@@ -51,7 +53,6 @@ Route::middleware('token.auth')->group(function () {
         Route::put('admin/users/{id}/restore', [UserController::class, 'restore']);
 
         // Job categories (Admin only)
-        Route::get('job-categories', [JobCategoryController::class, 'index']);
         Route::post('job-categories', [JobCategoryController::class, 'store']);
         Route::get('job-categories/{id}', [JobCategoryController::class, 'show']);
         Route::put('job-categories/{id}', [JobCategoryController::class, 'update']);

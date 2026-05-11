@@ -1,8 +1,8 @@
 import { RouteRecordRaw } from 'vue-router'
-import JobsIndex from '@/pages/jobs/JobsIndex.vue'
-import JobShow from '@/pages/jobs/JobShow.vue'
-import JobApply from '@/pages/jobs/JobApply.vue'
-import ApplicationsIndex from '@/pages/jobs/ApplicationsIndex.vue'
+import JobsIndex from '@/pages/jobseeker/JobListings.vue'
+import JobShow from '@/pages/jobseeker/JobDetail.vue'
+import JobApply from '@/pages/jobseeker/JobApply.vue'
+import ApplicationsIndex from '@/pages/jobseeker/MyApplications.vue'
 
 const jobsRoutes: Array<RouteRecordRaw> = [
   {

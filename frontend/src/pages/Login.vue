@@ -66,6 +66,19 @@
             </button>
           </form>
 
+          <!-- Job Seeker Registration -->
+          <div class="mt-4">
+            <router-link
+              to="/register"
+              class="flex w-full items-center justify-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100"
+            >
+              Create Job Seeker Account
+            </router-link>
+            <p class="mt-2 text-center text-xs text-gray-500">
+              Job seekers register here, then sign in to browse jobs and apply.
+            </p>
+          </div>
+
           <!-- Test Credentials -->
           <div class="mt-6 pt-6 border-t">
             <p class="text-xs text-gray-500 text-center mb-2">Demo credentials:</p>

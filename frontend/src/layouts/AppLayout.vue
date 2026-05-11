@@ -67,6 +67,46 @@
       </main>
     </template>
 
+    <template v-else-if="isJobSeekerArea">
+      <div class="min-h-screen bg-slate-950 text-white">
+        <header class="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/85 backdrop-blur-xl">
+          <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 lg:px-6">
+            <div>
+              <p class="text-[11px] uppercase tracking-[0.22em] text-cyan-300">Job Portal</p>
+              <h1 class="text-xl font-black text-white">Find your next opportunity</h1>
+            </div>
+            <div class="flex items-center gap-2 sm:gap-3">
+              <router-link
+                to="/jobs"
+                class="rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-cyan-400 hover:text-cyan-200"
+              >
+                Jobs
+              </router-link>
+              <router-link
+                to="/my-applications"
+                class="rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-cyan-400 hover:text-cyan-200"
+              >
+                My Applications
+              </router-link>
+              <button
+                v-if="authStore.isAuthenticated"
+                type="button"
+                class="rounded-full border border-rose-500/30 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-200 transition hover:bg-rose-500/20"
+                @click="authStore.logout()"
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main class="relative mx-auto max-w-7xl px-4 py-6 lg:px-6">
+          <div class="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.18),_transparent_58%)]" />
+          <slot />
+        </main>
+      </div>
+    </template>
+
     <template v-else>
       <header class="bg-white shadow">
         <div class="container mx-auto flex items-center justify-between p-4">
@@ -103,6 +143,7 @@ const authStore = useAuthStore()
 
 const isManagerArea = computed(() => route.path.startsWith('/manager'))
 const isEmployeeArea = computed(() => route.path.startsWith('/employee'))
+const isJobSeekerArea = computed(() => route.path.startsWith('/jobs') || route.path.startsWith('/register') || route.path.startsWith('/my-applications'))
 
 const dashboardRoute = computed(() => {
   if (isEmployeeArea.value) return '/employee'

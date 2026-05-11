@@ -55,7 +55,7 @@
             </span>
             <div class="flex gap-2">
               <button
-                v-if="task.status !== 'in_progress'"
+                v-if="task.status !== 'in_progress' && task.status !== 'completed'"
                 @click="updateStatus('in_progress')"
                 class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition"
                 :disabled="updating"
