@@ -6,6 +6,7 @@ import UserEdit from '@/modules/admin/pages/users/UserEdit.vue'
 import CompaniesList from '@/modules/admin/pages/companies/CompaniesList.vue'
 import CompanyCreate from '@/modules/admin/pages/companies/CompanyCreate.vue'
 import CompanyEdit from '@/modules/admin/pages/companies/CompanyEdit.vue'
+import EmployeesList from '@/modules/admin/pages/employees/EmployeesList.vue'
 import JobCategoriesList from '@/modules/admin/pages/job-categories/JobCategoriesList.vue'
 import JobCategoryCreate from '@/modules/admin/pages/job-categories/JobCategoryCreate.vue'
 import JobCategoryEdit from '@/modules/admin/pages/job-categories/JobCategoryEdit.vue'
@@ -68,6 +69,12 @@ const routes: Array<RouteRecordRaw> = [
         path: 'job-categories/:id/edit',
         name: 'JobCategoryEdit',
         component: JobCategoryEdit,
+        meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
+        path: 'employees',
+        name: 'AdminEmployees',
+        component: EmployeesList,
         meta: { requiresAuth: true, role: 'admin' }
       }
     ]

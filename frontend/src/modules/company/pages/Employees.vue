@@ -297,6 +297,30 @@
                   <div class="form-group">
                     <label class="form-label">
                       <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 21V7a2 2 0 012-2h4m0 16V5m0 16h6M9 5V3h6v2m0 0h4a2 2 0 012 2v14M15 21V9" />
+                      </svg>
+                      Role
+                    </label>
+                    <select v-model="form.role" class="form-input form-select">
+                      <option value="employee">Employee</option>
+                      <option value="manager">Manager</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">
+                      <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 21V7a2 2 0 012-2h4m0 16V5m0 16h6M9 5V3h6v2m0 0h4a2 2 0 012 2v14M15 21V9" />
+                      </svg>
+                      Salary
+                    </label>
+                    <input v-model.number="form.salary" type="number" min="0" step="0.01" class="form-input" placeholder="e.g. 50000.00" />
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">
+                      <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       Status
@@ -477,6 +501,7 @@ const selectedDepartmentId   = ref('')
 const form = ref({
   name: '', email: '', password: '',
   department_id: '', job_title: '', status: 'probation',
+  role: 'employee', salary: null as number | null,
 })
 
 // ── Helpers ───────────────────────────────────────────
@@ -524,6 +549,7 @@ const openEdit = (e: any) => {
   form.value = {
     name: e.user?.name || '', email: e.user?.email || '', password: '',
     department_id: e.department_id || '', job_title: e.job_title || '', status: e.status || 'probation',
+    role: e.role || 'employee', salary: e.salary ?? null,
   }
   showModal.value = true
 }
@@ -534,6 +560,8 @@ const saveEmployee = async () => {
       department_id: form.value.department_id || null,
       job_title: form.value.job_title || null,
       status: form.value.status,
+      role: form.value.role || null,
+      salary: form.value.salary ?? null,
     })
   } else {
     await api.post('/employees', {
@@ -541,6 +569,8 @@ const saveEmployee = async () => {
       department_id: form.value.department_id || null,
       job_title: form.value.job_title || null,
       status: form.value.status,
+      role: form.value.role || null,
+      salary: form.value.salary ?? null,
     })
   }
   closeModal()
