@@ -211,7 +211,7 @@ const restoreCategory = async (categoryId: string) => {
 
   restoringId.value = categoryId
   try {
-    await api.post(`/job-categories/${categoryId}/restore`)
+    await api.post(`/job-categories/restore/${categoryId}`)
     await fetchCategories()
   } catch (err: any) {
     error.value = err.response?.data?.message || 'Failed to restore category'

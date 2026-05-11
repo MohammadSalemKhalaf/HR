@@ -1,16 +1,20 @@
 import axios from 'axios'
 
 // Use backend URL directly (not proxied) for SPA to work properly
-const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
+const rawBase = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8081').replace(/\/$/, '')
+const BACKEND_URL = rawBase.replace(/\/api$/i, '')
+
+// In dev, same-origin `/api` + Vite proxy avoids wrong host/port and mixed CORS issues.
+const baseURL = import.meta.env.DEV ? '/api' : `${BACKEND_URL}/api`
 
 const api = axios.create({
-  baseURL: `${BACKEND_URL}/api`,
+  baseURL,
   headers: {
     Accept: 'application/json'
   }
 })
 
-console.log('[Axios] Configured with baseURL:', api.defaults.baseURL)
+console.log('[Axios] Configured with baseURL:', api.defaults.baseURL, import.meta.env.DEV ? '(Vite proxy in dev)' : '')
 
 // Request defaults
 api.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'

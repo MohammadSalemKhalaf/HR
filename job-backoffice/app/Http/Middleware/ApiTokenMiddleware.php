@@ -25,6 +25,7 @@ class ApiTokenMiddleware
         }
 
         Auth::setUser($user);
+        $request->setUserResolver(static fn () => $user);
         $request->attributes->set('api_user', $user);
 
         return $next($request);

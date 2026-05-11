@@ -29,13 +29,17 @@ Route::prefix('auth')->group(function () {
 Route::middleware('token.auth')->group(function () {
     Route::get('me', [AuthController::class, 'me']);
 
-    // Admin endpoints
+    // Admin endpoints (same envelope as other API responses so SPA can read data.data)
     Route::get('admin/dashboard-stats', function () {
-        return [
-            'companies' => \App\Models\Company::count(),
-            'departments' => \App\Models\Department::count(),
-            'employees' => \App\Models\Employee::count(),
-        ];
+        return response()->json([
+            'success' => true,
+            'message' => 'Dashboard statistics retrieved successfully.',
+            'data' => [
+                'companies' => \App\Models\Company::count(),
+                'departments' => \App\Models\Department::count(),
+                'employees' => \App\Models\Employee::count(),
+            ],
+        ]);
     });
 
     // User management (Admin only)
@@ -52,7 +56,8 @@ Route::middleware('token.auth')->group(function () {
         Route::get('job-categories/{id}', [JobCategoryController::class, 'show']);
         Route::put('job-categories/{id}', [JobCategoryController::class, 'update']);
         Route::delete('job-categories/{id}', [JobCategoryController::class, 'destroy']);
-        Route::post('job-categories/{id}/restore', [JobCategoryController::class, 'restore']);
+        Route::match(['post', 'put'], 'job-categories/restore/{id}', [JobCategoryController::class, 'restore']);
+        Route::match(['post', 'put'], 'job-categories/{id}/restore', [JobCategoryController::class, 'restore']);
 
         // Companies (Admin only)
         Route::get('companies', [CompanyController::class, 'index']);
@@ -60,7 +65,8 @@ Route::middleware('token.auth')->group(function () {
         Route::get('companies/{id}', [CompanyController::class, 'show']);
         Route::put('companies/{id}', [CompanyController::class, 'update']);
         Route::delete('companies/{id}', [CompanyController::class, 'destroy']);
-        Route::post('companies/{id}/restore', [CompanyController::class, 'restore']);
+        Route::match(['post', 'put'], 'companies/restore/{id}', [CompanyController::class, 'restore']);
+        Route::match(['post', 'put'], 'companies/{id}/restore', [CompanyController::class, 'restore']);
     });
 
     Route::middleware('role:company')->group(function () {

@@ -104,7 +104,12 @@ onMounted(async () => {
   loading.value = true
   try {
     const { data } = await api.get('/admin/dashboard-stats')
-    stats.value = data
+    const payload = data?.data ?? data
+    stats.value = {
+      companies: Number(payload?.companies ?? 0),
+      departments: Number(payload?.departments ?? 0),
+      employees: Number(payload?.employees ?? 0)
+    }
   } catch (e) {
     console.error('Failed to load dashboard stats:', e)
     // graceful fallback — backend may not provide endpoint yet

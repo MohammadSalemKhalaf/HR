@@ -5,8 +5,6 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Illuminate\Support\Facades\Auth;
-
 
 class RoleMiddleware
 {
@@ -17,13 +15,14 @@ class RoleMiddleware
      */
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        if (Auth::check()) {
-            /** @var \App\Models\User $user */
-            $user = Auth::user();
+        $user = $request->user();
 
-            if (! $user->hasRole($roles)) {
-                abort(403);
-            }
+        if (! $user) {
+            abort(401);
+        }
+
+        if (! $user->hasRole($roles)) {
+            abort(403);
         }
 
         return $next($request);

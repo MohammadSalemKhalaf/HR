@@ -232,7 +232,7 @@ const restoreCompany = async (companyId: string) => {
 
   restoringId.value = companyId
   try {
-    await api.post(`/companies/${companyId}/restore`)
+    await api.post(`/companies/restore/${companyId}`)
     await fetchCompanies()
   } catch (err: any) {
     error.value = err.response?.data?.message || 'Failed to restore company'
