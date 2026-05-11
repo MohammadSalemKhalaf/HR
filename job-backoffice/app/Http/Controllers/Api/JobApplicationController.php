@@ -155,6 +155,18 @@ class JobApplicationController extends BaseApiController
 
         $aiData = $this->generateJobMatchFeedback($analysisText, $job);
 
+        // Gate application submission by minimum skills match score.
+        if (($aiData['score'] ?? 0) < 5) {
+            return $this->error(
+                'Application blocked: your current profile does not meet the minimum required skills for this job (minimum score is 5/10).',
+                [
+                    'ai_score' => [$aiData['score'] ?? 0],
+                    'ai_feedback' => [$aiData['feedback'] ?? ''],
+                ],
+                422
+            );
+        }
+
         $application = JobApplication::create([
             'status' => 'pending',
             'aiGeneratedScore' => $aiData['score'],
@@ -165,6 +177,28 @@ class JobApplicationController extends BaseApiController
         ]);
 
         return $this->success('Application created successfully.', $application->load(['user', 'resume', 'jobvacancy.company', 'jobvacancy.jobcategory']), 201);
+    }
+
+    public function analyze(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'job_vacancy_id' => ['required', 'exists:job_vacancies,id'],
+            'cv_text' => ['required', 'string', 'min:20'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error('Validation failed.', $validator->errors(), 422);
+        }
+
+        $job = JobVacancy::with(['company', 'jobcategory'])->find($request->string('job_vacancy_id'));
+
+        if (! $job) {
+            return $this->notFound('Job vacancy not found.');
+        }
+
+        $analysis = $this->generateJobMatchFeedback(trim((string) $request->input('cv_text', '')), $job);
+
+        return $this->success('Application analysis generated successfully.', $analysis);
     }
 
     public function accept(string $id): JsonResponse
@@ -242,6 +276,7 @@ class JobApplicationController extends BaseApiController
 
     private function generateJobMatchFeedback(string $resumeText, JobVacancy $job): array
     {
+        $localAnalysis = $this->buildApplicationAiData($resumeText, $job);
         $apiKey = env('GROQ_API_KEY');
 
         if ($apiKey) {
@@ -267,6 +302,7 @@ Rules:
 - The score must reflect the actual match between resume and job requirements.
 - Mention specific skills that matched and specific gaps that are missing.
 - Do not use generic phrases like 'good candidate' or 'ready for review'.
+- Be strict and evidence-based: only claim matches that appear in the resume text.
 PROMPT;
 
                 $prompt = str_replace('{{RESUME}}', $resumeText, $prompt);
@@ -303,6 +339,9 @@ PROMPT;
                                 return [
                                     'score' => $this->normalizeScore($decoded['score'] ?? 0),
                                     'feedback' => $feedback,
+                                    'matched_skills' => $localAnalysis['matched_skills'] ?? [],
+                                    'missing_skills' => $localAnalysis['missing_skills'] ?? [],
+                                    'analysis_source' => 'groq',
                                 ];
                             }
                         }
@@ -313,20 +352,29 @@ PROMPT;
             }
         }
 
-        return $this->buildApplicationAiData($resumeText, $job);
+        return $localAnalysis;
     }
 
     private function buildApplicationAiData(string $resumeText, JobVacancy $job): array
     {
-        $resumeSkills = $this->extractSkills($resumeText);
-        $jobSkills = $this->extractSkills($this->buildJobText($job));
+        $normalizedResume = $this->normalizeText($resumeText);
+        $normalizedJob = $this->normalizeText($this->buildJobText($job));
+
+        $resumeSkills = $this->extractSkills($normalizedResume);
+        $jobSkills = $this->extractSkills($normalizedJob);
 
         $matchedSkills = array_values(array_intersect($jobSkills, $resumeSkills));
         $missingSkills = array_values(array_diff($jobSkills, $resumeSkills));
 
-        $resumeLengthBoost = min(1.5, max(0, strlen($this->normalizeText($resumeText)) / 2000));
-        $coverage = count($jobSkills) > 0 ? count($matchedSkills) / count($jobSkills) : 0.35;
-        $score = round(min(10, max(0, ($coverage * 8.5) + $resumeLengthBoost)), 1);
+        $jobRequirements = $this->extractRequirementTerms($normalizedJob);
+        $matchedRequirements = array_values(array_filter($jobRequirements, fn ($term) => str_contains($normalizedResume, $term)));
+        $missingRequirements = array_values(array_filter($jobRequirements, fn ($term) => ! str_contains($normalizedResume, $term)));
+
+        $skillCoverage = count($jobSkills) > 0 ? count($matchedSkills) / count($jobSkills) : 0;
+        $requirementCoverage = count($jobRequirements) > 0 ? count($matchedRequirements) / count($jobRequirements) : 0;
+
+        $resumeLengthBoost = min(1.2, max(0, strlen($normalizedResume) / 2200));
+        $score = round(min(10, max(0, ($skillCoverage * 5.5) + ($requirementCoverage * 3.3) + $resumeLengthBoost)), 1);
 
         if (count($matchedSkills) === 0 && strlen(trim($resumeText)) > 0) {
             $score = min($score, 4.5);
@@ -335,11 +383,19 @@ PROMPT;
         $feedbackParts = [];
 
         if ($matchedSkills !== []) {
-            $feedbackParts[] = 'Matched skills: ' . implode(', ', array_slice($matchedSkills, 0, 5)) . '.';
+            $feedbackParts[] = 'Matched skills: ' . implode(', ', array_slice($matchedSkills, 0, 6)) . '.';
         }
 
         if ($missingSkills !== []) {
-            $feedbackParts[] = 'Missing key requirements: ' . implode(', ', array_slice($missingSkills, 0, 4)) . '.';
+            $feedbackParts[] = 'Missing key skills: ' . implode(', ', array_slice($missingSkills, 0, 5)) . '.';
+        }
+
+        if ($matchedRequirements !== []) {
+            $feedbackParts[] = 'Matched requirements: ' . implode(', ', array_slice($matchedRequirements, 0, 4)) . '.';
+        }
+
+        if ($missingRequirements !== []) {
+            $feedbackParts[] = 'Missing requirements: ' . implode(', ', array_slice($missingRequirements, 0, 4)) . '.';
         }
 
         if ($feedbackParts === []) {
@@ -353,7 +409,35 @@ PROMPT;
         return [
             'score' => $score,
             'feedback' => implode(' ', $feedbackParts),
+            'matched_skills' => $matchedSkills,
+            'missing_skills' => $missingSkills,
+            'analysis_source' => 'deterministic',
         ];
+    }
+
+    private function extractRequirementTerms(string $jobText): array
+    {
+        $stopWords = [
+            'the', 'and', 'for', 'with', 'from', 'that', 'this', 'you', 'your', 'our', 'role', 'job',
+            'work', 'will', 'are', 'have', 'has', 'must', 'should', 'experience', 'candidate', 'team',
+            'skills', 'requirements', 'position', 'strong', 'good', 'ability', 'knowledge', 'using'
+        ];
+
+        $tokens = preg_split('/\s+/', $jobText) ?: [];
+        $filtered = [];
+
+        foreach ($tokens as $token) {
+            $term = trim($token);
+            if ($term === '' || strlen($term) < 4) {
+                continue;
+            }
+            if (in_array($term, $stopWords, true)) {
+                continue;
+            }
+            $filtered[] = $term;
+        }
+
+        return array_values(array_slice(array_unique($filtered), 0, 20));
     }
 
     private function extractSkills(string $text): array

@@ -187,7 +187,7 @@
             </router-link>
             <button
               type="submit"
-              :disabled="submitting || !form.resumeFile"
+              :disabled="submitting || analysisLoading || !form.resumeFile || !canSubmitByScore"
               class="flex-1 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg transition duration-200"
             >
               <span v-if="!submitting">Submit Application</span>
@@ -199,6 +199,11 @@
               </span>
             </button>
           </div>
+
+          <div v-if="aiAnalysis && !canSubmitByScore" class="rounded-lg border border-rose-500/30 bg-rose-500/10 p-4">
+            <p class="text-sm text-rose-200 font-semibold">Application blocked</p>
+            <p class="text-sm text-rose-100 mt-1">You need at least 5/10 to apply for this role. Your current score is {{ aiAnalysis.score }}/10.</p>
+          </div>
         </form>
       </div>
     </div>
@@ -206,7 +211,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppLayout from '@/layouts/AppLayout.vue'
 import api from '@/api/axios'
@@ -232,6 +237,7 @@ const analysisLoading = ref(false)
 const extractedResumeText = ref('')
 const aiAnalysis = ref<AnalysisResult | null>(null)
 const submissionResult = ref<AnalysisResult | null>(null)
+const minExtractedTextLength = 20
 
 const form = ref({
   resumeFile: null as File | null,
@@ -298,11 +304,28 @@ const analyzeResume = async (file: File) => {
 
   try {
     extractedResumeText.value = await extractResumeText(file)
-    aiAnalysis.value = buildMatchAnalysis(extractedResumeText.value)
+    if (extractedResumeText.value.trim().length < minExtractedTextLength) {
+      aiAnalysis.value = null
+      errorMessage.value = 'Could not read enough text from this CV. Please upload a clearer text-based PDF/DOCX.'
+      return
+    }
+
+    const response = await api.post('/applications/analyze', {
+      job_vacancy_id: route.params.id,
+      cv_text: extractedResumeText.value,
+    })
+
+    const analysis = response.data?.data || {}
+    aiAnalysis.value = {
+      score: Number(analysis.score ?? 0),
+      feedback: String(analysis.feedback ?? ''),
+      matchedSkills: Array.isArray(analysis.matched_skills) ? analysis.matched_skills : [],
+      missingSkills: Array.isArray(analysis.missing_skills) ? analysis.missing_skills : [],
+    }
   } catch (error) {
     console.error('Error analyzing resume:', error)
-    extractedResumeText.value = ''
-    aiAnalysis.value = buildMatchAnalysis(file.name)
+    aiAnalysis.value = null
+    errorMessage.value = 'Failed to analyze this CV. Please try again with a different file.'
   } finally {
     analysisLoading.value = false
   }
@@ -370,46 +393,24 @@ const buildJobText = (): string => {
   ].filter(Boolean).join(' ')
 }
 
-const buildMatchAnalysis = (resumeText: string): AnalysisResult => {
-  const resumeSkills = extractSkills(resumeText)
-  const jobSkills = extractSkills(buildJobText())
-  const matchedSkills = jobSkills.filter(skill => resumeSkills.includes(skill))
-  const missingSkills = jobSkills.filter(skill => !resumeSkills.includes(skill))
-
-  const coverage = jobSkills.length > 0 ? matchedSkills.length / jobSkills.length : 0.35
-  const lengthBoost = Math.min(1.2, Math.max(0, normalizeText(resumeText).length / 2200))
-  let score = Math.min(10, Math.max(0, Number(((coverage * 8.5) + lengthBoost).toFixed(1))))
-
-  if (matchedSkills.length === 0 && normalizeText(resumeText).length > 0) {
-    score = Math.min(score, 4.5)
-  }
-
-  const feedbackParts: string[] = []
-  if (matchedSkills.length > 0) {
-    feedbackParts.push(`Matched skills: ${matchedSkills.slice(0, 5).join(', ')}.`)
-  }
-  if (missingSkills.length > 0) {
-    feedbackParts.push(`Missing key requirements: ${missingSkills.slice(0, 4).join(', ')}.`)
-  }
-  feedbackParts.push(
-    score >= 7
-      ? 'Overall, this is a strong match for the role.'
-      : score >= 5
-        ? 'Overall, this is a partial match and would benefit from a few more relevant skills.'
-        : 'Overall, this is a weak match for the role as written.'
-  )
-
-  return {
-    score,
-    feedback: feedbackParts.join(' '),
-    matchedSkills,
-    missingSkills,
-  }
-}
+const canSubmitByScore = computed(() => {
+  if (!aiAnalysis.value) return false
+  return Number(aiAnalysis.value.score) >= 5
+})
 
 const submitApplication = async () => {
   if (!form.value.resumeFile) {
     errorMessage.value = 'Please upload a resume'
+    return
+  }
+
+  if (extractedResumeText.value.trim().length < minExtractedTextLength) {
+    errorMessage.value = 'CV text is too short or unreadable. Please upload a clearer CV file.'
+    return
+  }
+
+  if (!canSubmitByScore.value) {
+    errorMessage.value = `You cannot apply because your score is ${aiAnalysis.value?.score ?? 0}/10. Minimum required score is 5/10.`
     return
   }
 
@@ -444,8 +445,19 @@ const submitApplication = async () => {
     }
     successMessage.value = 'Application submitted successfully! Review the AI match below.'
   } catch (error: any) {
-    const errorData = error.response?.data
-    errorMessage.value = errorData?.message || 'Failed to submit application'
+    if (error?.type === 'validation') {
+      const validationValues = error.validation ? Object.values(error.validation).flat() : []
+      const firstValidationMessage = validationValues.find((value: any) => typeof value === 'string' && value.trim().length > 0)
+      errorMessage.value = firstValidationMessage || error.apiMessage || 'Validation failed while submitting application.'
+    } else {
+      const errorData = error.response?.data
+      const validationValues = errorData?.errors
+        ? Object.values(errorData.errors).flat()
+        : []
+      const firstValidationMessage = validationValues.find((value: any) => typeof value === 'string' && value.trim().length > 0)
+      const apiMessage = errorData?.message
+      errorMessage.value = firstValidationMessage || apiMessage || 'Failed to submit application'
+    }
   } finally {
     submitting.value = false
   }

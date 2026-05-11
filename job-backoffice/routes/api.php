@@ -106,6 +106,7 @@ Route::middleware('token.auth')->group(function () {
     Route::post('job-vacancies/{id}/restore', [JobVacancyController::class, 'restore']);
 
     Route::get('applications', [JobApplicationController::class, 'index']);
+    Route::post('applications/analyze', [JobApplicationController::class, 'analyze']);
     Route::post('applications', [JobApplicationController::class, 'store']);
     Route::get('applications/{id}', [JobApplicationController::class, 'show']);
     Route::put('applications/{id}', [JobApplicationController::class, 'update']);

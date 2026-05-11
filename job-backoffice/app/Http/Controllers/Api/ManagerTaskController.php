@@ -89,7 +89,7 @@ class ManagerTaskController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'repository_url' => ['nullable', 'url'],
+            'repository_url' => ['nullable', 'string', 'max:500'],
             'priority' => ['required', 'in:low,medium,high'],
             'employee_id' => ['required', 'exists:employees,id'],
             'due_date' => ['nullable', 'date'],
@@ -145,7 +145,7 @@ class ManagerTaskController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'repository_url' => ['nullable', 'url'],
+            'repository_url' => ['nullable', 'string', 'max:500'],
             'priority' => ['required', 'in:low,medium,high'],
             'employee_id' => ['required', 'exists:employees,id'],
             'status' => ['required', 'in:pending,in_progress,completed'],

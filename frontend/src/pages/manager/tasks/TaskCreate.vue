@@ -3,6 +3,10 @@
     <div class="container mx-auto p-6">
       <h2 class="text-xl font-semibold mb-4">Create Task</h2>
 
+      <div v-if="errorMessage" class="mb-4 rounded border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+        {{ errorMessage }}
+      </div>
+
       <form @submit.prevent="submit">
         <div class="mb-3">
           <label class="block mb-1">Title</label>
@@ -55,6 +59,7 @@ import api from '@/api/axios'
 const router = useRouter()
 const employees = ref<any[]>([])
 const form = ref<any>({ title: '', employee_id: '', priority: 'medium', repository_url: '', due_date: '', description: '' })
+const errorMessage = ref('')
 
 async function fetchEmployees() {
   try {
@@ -64,10 +69,26 @@ async function fetchEmployees() {
 }
 
 async function submit() {
+  errorMessage.value = ''
   try {
-    await api.post('/manager/tasks', form.value)
+    const payload = {
+      ...form.value,
+      repository_url: form.value.repository_url?.trim() || null,
+      due_date: form.value.due_date || null,
+      description: form.value.description?.trim() || null,
+    }
+
+    await api.post('/manager/tasks', payload)
     router.push({ name: 'ManagerTaskIndex' })
-  } catch (err) { console.error(err) }
+  } catch (err: any) {
+    console.error(err)
+    const apiMessage = err?.response?.data?.message
+    const validationValues = err?.response?.data?.errors
+      ? Object.values(err.response.data.errors).flat()
+      : []
+    const firstValidationMessage = validationValues.find((value: any) => typeof value === 'string' && value.trim().length > 0)
+    errorMessage.value = firstValidationMessage || apiMessage || 'Failed to create task.'
+  }
 }
 
 onMounted(() => fetchEmployees())

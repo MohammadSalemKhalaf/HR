@@ -126,6 +126,7 @@ api.interceptors.response.use(
       const err = new Error('Validation Error') as any
       err.type = 'validation'
       err.validation = data.errors
+      err.apiMessage = data.message
       return Promise.reject(err)
     }
 
