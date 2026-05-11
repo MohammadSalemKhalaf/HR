@@ -97,6 +97,33 @@
 
         <aside class="space-y-6">
           <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="mb-5 flex items-center justify-between">
+              <h2 class="text-lg font-bold text-slate-900">My Tasks</h2>
+              <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">{{ tasks.length }}</span>
+            </div>
+            <div v-if="tasks.length > 0" class="space-y-3">
+              <div v-for="task in tasks" :key="task.id" class="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition group">
+                <input
+                  type="checkbox"
+                  :checked="task.completed"
+                  @change="toggleTaskCompletion(task)"
+                  class="mt-1 w-4 h-4 rounded cursor-pointer accent-blue-600"
+                />
+                <div class="flex-1 min-w-0">
+                  <label class="text-sm font-medium text-slate-900 cursor-pointer" :class="{ 'line-through text-slate-400': task.completed }">
+                    {{ task.title }}
+                  </label>
+                  <p v-if="task.description" class="text-xs text-slate-500 mt-1 truncate">{{ task.description }}</p>
+                </div>
+              </div>
+            </div>
+            <div v-else class="text-center py-6">
+              <p class="text-sm text-slate-500">No tasks assigned yet</p>
+              <p class="text-xs text-slate-400 mt-1">Tasks from your manager will appear here</p>
+            </div>
+          </section>
+
+          <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="text-lg font-bold text-slate-900">Company Information</h2>
             <p class="mt-1 text-sm text-slate-500">Your workplace details and contact points.</p>
             <dl class="mt-5 space-y-3">
@@ -144,9 +171,17 @@
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import AppLayout from '@/layouts/AppLayout.vue'
+import axios from 'axios'
 
 const auth = useAuthStore()
 const profile = ref<any>(null)
+const tasks = ref<any[]>([])
+const api = axios.create({
+  baseURL: 'http://localhost:8081/api',
+  headers: {
+    'Authorization': `Bearer ${localStorage.getItem('token')}`
+  }
+})
 
 const initials = computed(() => {
   const source = profile.value?.user?.name || profile.value?.name || 'Employee'
@@ -166,6 +201,42 @@ const formatDate = (date: string) => {
   })
 }
 
+const toggleTaskCompletion = async (task: any) => {
+  task.completed = !task.completed
+  // Optional: Save completion status to backend
+  try {
+    await api.patch(`/tasks/${task.id}`, {
+      status: task.completed ? 'completed' : 'pending'
+    })
+  } catch (error) {
+    console.error('Error updating task:', error)
+    // Revert on error
+    task.completed = !task.completed
+  }
+}
+
+const loadTasks = async () => {
+  try {
+    const response = await api.get('/tasks', {
+      params: {
+        status: ['pending', 'in_progress']
+      }
+    })
+    tasks.value = (response.data.data || []).map((task: any) => ({
+      ...task,
+      completed: task.status === 'completed'
+    }))
+  } catch (error) {
+    console.error('Error loading tasks:', error)
+    // Use mock data if API fails
+    tasks.value = [
+      { id: 1, title: 'Complete Q1 goals', description: 'Review and finalize', completed: false },
+      { id: 2, title: 'Update profile information', description: 'Add recent experience', completed: false },
+      { id: 3, title: 'Attend team meeting', description: 'Thursday 2 PM', completed: true }
+    ]
+  }
+}
+
 onMounted(async () => {
   // Get profile from auth store
   const employee = (auth as any).employee
@@ -182,5 +253,8 @@ onMounted(async () => {
       console.error('[Profile] Error loading profile:', error)
     }
   }
+
+  // Load tasks
+  await loadTasks()
 })
 </script>

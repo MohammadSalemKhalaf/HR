@@ -1,0 +1,195 @@
+<!-- Task List Component - Visual Preview -->
+<!-- This demonstrates how the Task List appears on the Employee Profile page -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Profile - Task List Feature</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .line-through { text-decoration: line-through; }
+    .transition { transition: all 0.2s ease; }
+  </style>
+</head>
+<body class="bg-gray-50 p-8">
+  <div class="max-w-5xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Employee Profile - Task List Feature</h1>
+      <p class="text-gray-600 mt-2">How the new "My Tasks" section appears on the employee profile page</p>
+    </div>
+
+    <!-- Layout -->
+    <div class="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+      <!-- Left Column: Personal Info (shortened for demo) -->
+      <div class="space-y-6">
+        <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 class="text-lg font-bold text-slate-900 mb-4">Personal Information</h2>
+          <p class="text-sm text-slate-600">Personal details would appear here...</p>
+        </section>
+
+        <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 class="text-lg font-bold text-slate-900 mb-4">Employment Information</h2>
+          <p class="text-sm text-slate-600">Employment details would appear here...</p>
+        </section>
+      </div>
+
+      <!-- Right Column: Tasks (NEW FEATURE) -->
+      <aside class="space-y-6">
+        <!-- NEW SECTION: My Tasks -->
+        <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="mb-5 flex items-center justify-between">
+            <h2 class="text-lg font-bold text-slate-900">My Tasks</h2>
+            <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">3</span>
+          </div>
+
+          <!-- Task List with Checkboxes -->
+          <div class="space-y-3">
+            <!-- Task 1: Uncompleted -->
+            <div class="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition group">
+              <input
+                type="checkbox"
+                checked="false"
+                class="mt-1 w-4 h-4 rounded cursor-pointer accent-blue-600"
+              />
+              <div class="flex-1 min-w-0">
+                <label class="text-sm font-medium text-slate-900 cursor-pointer">
+                  Complete Q1 goals
+                </label>
+                <p class="text-xs text-slate-500 mt-1 truncate">Review and finalize quarterly performance</p>
+              </div>
+            </div>
+
+            <!-- Task 2: Uncompleted -->
+            <div class="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition group">
+              <input
+                type="checkbox"
+                checked="false"
+                class="mt-1 w-4 h-4 rounded cursor-pointer accent-blue-600"
+              />
+              <div class="flex-1 min-w-0">
+                <label class="text-sm font-medium text-slate-900 cursor-pointer">
+                  Update profile information
+                </label>
+                <p class="text-xs text-slate-500 mt-1 truncate">Add recent experience and certifications</p>
+              </div>
+            </div>
+
+            <!-- Task 3: Completed (with strikethrough) -->
+            <div class="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition group">
+              <input
+                type="checkbox"
+                checked="true"
+                class="mt-1 w-4 h-4 rounded cursor-pointer accent-blue-600"
+              />
+              <div class="flex-1 min-w-0">
+                <label class="text-sm font-medium text-slate-900 cursor-pointer line-through text-slate-400">
+                  Attend team meeting
+                </label>
+                <p class="text-xs text-slate-500 mt-1 truncate">Thursday 2 PM - Conference Room A</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Company Information -->
+        <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 class="text-lg font-bold text-slate-900">Company Information</h2>
+          <p class="text-sm text-slate-600 mt-2">Company details would appear here...</p>
+        </section>
+      </aside>
+    </div>
+
+    <!-- Features Documentation -->
+    <div class="mt-12 space-y-6">
+      <h2 class="text-2xl font-bold text-gray-900">Features</h2>
+      
+      <!-- Feature 1 -->
+      <div class="border-l-4 border-blue-500 bg-white p-6 rounded-lg shadow-sm">
+        <h3 class="font-bold text-lg text-gray-900">✅ Task List with Checkboxes</h3>
+        <p class="text-gray-600 mt-2">Each task displays with a clickable checkbox. Users can quickly mark tasks as complete.</p>
+        <pre class="mt-3 bg-gray-50 p-3 rounded text-sm overflow-x-auto"><code>&lt;input type="checkbox" :checked="task.completed" @change="toggleTaskCompletion(task)" /&gt;</code></pre>
+      </div>
+
+      <!-- Feature 2 -->
+      <div class="border-l-4 border-green-500 bg-white p-6 rounded-lg shadow-sm">
+        <h3 class="font-bold text-lg text-gray-900">🔢 Task Counter</h3>
+        <p class="text-gray-600 mt-2">A badge displays the total number of tasks assigned to the employee.</p>
+        <pre class="mt-3 bg-gray-50 p-3 rounded text-sm"><code>&lt;span class="rounded-full bg-blue-50"&gt;{{ tasks.length }}&lt;/span&gt;</code></pre>
+      </div>
+
+      <!-- Feature 3 -->
+      <div class="border-l-4 border-purple-500 bg-white p-6 rounded-lg shadow-sm">
+        <h3 class="font-bold text-lg text-gray-900">📝 Task Description</h3>
+        <p class="text-gray-600 mt-2">Each task can have a description that provides more context about what needs to be done.</p>
+        <pre class="mt-3 bg-gray-50 p-3 rounded text-sm overflow-x-auto"><code>&lt;p&gt;{{ task.description }}&lt;/p&gt;</code></pre>
+      </div>
+
+      <!-- Feature 4 -->
+      <div class="border-l-4 border-orange-500 bg-white p-6 rounded-lg shadow-sm">
+        <h3 class="font-bold text-lg text-gray-900">🎨 Visual Feedback</h3>
+        <p class="text-gray-600 mt-2">Completed tasks show a strikethrough effect and gray color for easy visual distinction.</p>
+        <pre class="mt-3 bg-gray-50 p-3 rounded text-sm overflow-x-auto"><code>:class="{ 'line-through text-slate-400': task.completed }"</code></pre>
+      </div>
+
+      <!-- Feature 5 -->
+      <div class="border-l-4 border-red-500 bg-white p-6 rounded-lg shadow-sm">
+        <h3 class="font-bold text-lg text-gray-900">🔄 Real-time Sync</h3>
+        <p class="text-gray-600 mt-2">When a task is marked as complete/incomplete, changes are saved to the backend API automatically.</p>
+        <pre class="mt-3 bg-gray-50 p-3 rounded text-sm overflow-x-auto"><code>await api.patch(`/tasks/${task.id}`, { status: task.completed ? 'completed' : 'pending' })</code></pre>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="mt-12">
+      <h2 class="text-2xl font-bold text-gray-900 mb-6">Empty State</h2>
+      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="mb-5 flex items-center justify-between">
+          <h2 class="text-lg font-bold text-slate-900">My Tasks</h2>
+          <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">0</span>
+        </div>
+        <div class="text-center py-6">
+          <p class="text-sm text-slate-500">No tasks assigned yet</p>
+          <p class="text-xs text-slate-400 mt-1">Tasks from your manager will appear here</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Code Example -->
+    <div class="mt-12">
+      <h2 class="text-2xl font-bold text-gray-900 mb-6">Implementation</h2>
+      <div class="bg-gray-900 text-gray-100 p-6 rounded-lg overflow-x-auto">
+        <pre><code>&lt;section class="rounded-3xl border border-slate-200 bg-white p-6"&gt;
+  &lt;div class="mb-5 flex items-center justify-between"&gt;
+    &lt;h2 class="text-lg font-bold text-slate-900"&gt;My Tasks&lt;/h2&gt;
+    &lt;span class="rounded-full bg-blue-50 px-3 py-1"&gt;{{ tasks.length }}&lt;/span&gt;
+  &lt;/div&gt;
+  
+  &lt;div v-if="tasks.length &gt; 0" class="space-y-3"&gt;
+    &lt;div v-for="task in tasks" :key="task.id" class="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100"&gt;
+      &lt;input
+        type="checkbox"
+        :checked="task.completed"
+        @change="toggleTaskCompletion(task)"
+        class="w-4 h-4 rounded cursor-pointer accent-blue-600"
+      /&gt;
+      &lt;div class="flex-1"&gt;
+        &lt;label class="text-sm font-medium" :class="{ 'line-through text-slate-400': task.completed }"&gt;
+          {{ task.title }}
+        &lt;/label&gt;
+        &lt;p v-if="task.description" class="text-xs text-slate-500 mt-1"&gt;{{ task.description }}&lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  
+  &lt;div v-else class="text-center py-6"&gt;
+    &lt;p class="text-sm text-slate-500"&gt;No tasks assigned yet&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/section&gt;</code></pre>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
